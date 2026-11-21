@@ -164,3 +164,8 @@ input[type="search"] {
   body { background: #fff; }
   .no-print { display: none !important; }
 }
+
+/* Accès à l'espace patient depuis la page d'accueil */
+.portal-cta { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); border-color: #b9c2e6; }
+.portal-cta:hover { background: var(--blue-soft); }
+.portal-cta > span:nth-child(2) { flex: 1; }

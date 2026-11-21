@@ -1,0 +1,112 @@
+/* SAMA TOUR — styles des espaces patient, soignant et administration */
+.topbar .right a { color: #fff; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.tab { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; cursor: pointer; font: inherit; font-weight: 600; color: var(--ink); }
+.tab.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+.tab .count { display: inline-block; min-width: 22px; padding: 0 6px; margin-left: 6px; border-radius: 99px; background: var(--blue-soft); color: var(--blue-dark); font-size: 0.8rem; }
+.tab.on .count { background: rgba(255, 255, 255, 0.25); color: #fff; }
+.row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.row:first-child { border-top: 0; }
+.row .who { flex: 1; min-width: 0; }
+.row .who .meta { font-size: 0.8rem; color: var(--muted); }
+.seg-tabs { margin-bottom: 4px; }
+.form-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; }
+@media (max-width: 420px) { .form-2 { grid-template-columns: 1fr; } }
+h3 { font-size: 0.95rem; margin: 16px 0 0; }
+code { font-family: Consolas, monospace; background: rgba(43, 63, 191, 0.08); padding: 1px 5px; border-radius: 4px; }
+details > summary { cursor: pointer; }
+details.card > summary { list-style: none; }
+
+/* Étapes de réservation */
+.steps { display: flex; gap: 6px; margin-bottom: 12px; }
+.steps span { flex: 1; text-align: center; font-size: 0.8rem; font-weight: 600; color: var(--muted); padding: 6px 4px; border-bottom: 3px solid var(--line); }
+.steps span.on { color: var(--blue); border-color: var(--blue); }
+.picked-line { background: var(--blue-soft); border-radius: 10px; padding: 10px 12px; }
+.day-strip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; }
+.day { flex: none; display: flex; flex-direction: column; align-items: center; min-width: 58px; padding: 8px 4px; border: 2px solid var(--line); border-radius: 12px; background: #fff; cursor: pointer; font: inherit; color: var(--ink); }
+.day span { font-size: 0.72rem; color: var(--muted); text-transform: capitalize; }
+.day b { font-size: 1.2rem; }
+.day.on { border-color: var(--blue); background: var(--blue-soft); }
+.slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 8px; }
+.slot { padding: 10px 4px; border: 2px solid var(--line); border-radius: 10px; background: #fff; font: inherit; font-weight: 700; cursor: pointer; color: var(--ink); }
+.slot:hover:not(:disabled) { border-color: var(--blue); background: var(--blue-soft); }
+.slot:disabled { opacity: 0.35; text-decoration: line-through; cursor: not-allowed; }
+.summary { background: var(--bg); border-radius: 12px; padding: 12px; }
+.total { font-size: 1.6rem; font-weight: 800; color: var(--blue); }
+.pay-methods { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pay-method { padding: 12px 8px; border: 2px solid var(--line); border-radius: 12px; background: #fff; font: inherit; font-weight: 700; cursor: pointer; color: var(--ink); }
+.pay-method.on { border-color: var(--blue); background: var(--blue-soft); }
+.pay-method.wave::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #1dc3f3; margin-right: 6px; }
+.pay-method.orange_money::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ff7900; margin-right: 6px; }
+.pay-method.free_money::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #cd1a2b; margin-right: 6px; }
+.pay-head { margin: -20px -20px 0; padding: 16px; border-radius: 14px 14px 0 0; color: #fff; font-weight: 800; text-align: center; font-size: 1.1rem; background: var(--blue); }
+.pay-head.wave { background: #1dc3f3; color: #062a3a; }
+.pay-head.orange_money { background: #ff7900; }
+.pay-head.free_money { background: #cd1a2b; }
+
+/* Liste des rendez-vous */
+.rdv { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.rdv:first-of-type { border-top: 0; }
+.rdv-date { flex: none; width: 52px; text-align: center; background: var(--blue-soft); border-radius: 10px; padding: 6px 0; color: var(--blue-dark); }
+.rdv-date b { display: block; font-size: 1.3rem; line-height: 1.1; }
+.rdv-date span { font-size: 0.75rem; text-transform: uppercase; }
+.rdv.cancelled .rdv-date, .rdv.done .rdv-date, .rdv.expired .rdv-date { background: #eef0f5; color: var(--muted); }
+.rdv-body { flex: 1; min-width: 0; }
+.rdv-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+
+/* Carte de santé */
+.health-card {
+  background: linear-gradient(135deg, #2b3fbf 0%, #1f2e8f 60%, #12805c 140%); color: #fff;
+  border-radius: 18px; padding: 18px; margin-bottom: 14px; box-shadow: 0 10px 30px rgba(31, 46, 143, 0.35);
+  max-width: 520px; margin-left: auto; margin-right: auto;
+}
+.hc-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.hc-top img { width: 34px; height: 34px; border-radius: 9px; }
+.hc-top b { display: block; letter-spacing: 0.05em; }
+.hc-top span { font-size: 0.75rem; opacity: 0.85; }
+.hc-main { display: flex; gap: 12px; justify-content: space-between; align-items: flex-start; }
+.hc-name { font-size: 1.3rem; font-weight: 800; }
+.hc-line { font-size: 0.85rem; opacity: 0.9; margin-top: 2px; }
+.hc-grid { display: flex; gap: 18px; margin: 10px 0 6px; }
+.hc-grid span { display: block; font-size: 0.7rem; opacity: 0.8; text-transform: uppercase; letter-spacing: 0.05em; }
+.hc-grid b { font-size: 1.05rem; white-space: nowrap; }
+.hc-alert { display: inline-block; background: rgba(255, 255, 255, 0.16); border-radius: 8px; padding: 4px 8px; font-size: 0.85rem; font-weight: 600; margin: 4px 0; }
+.health-card .qr { flex: none; padding: 6px; border-radius: 10px; }
+.share-code { font-family: Consolas, monospace; letter-spacing: 0.2em; color: var(--blue); background: var(--blue-soft); padding: 2px 8px; border-radius: 8px; }
+
+/* Dossier */
+.kv { display: grid; grid-template-columns: 150px 1fr; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); align-items: start; }
+.kv > span { color: var(--muted); font-size: 0.88rem; }
+@media (max-width: 460px) { .kv { grid-template-columns: 1fr; gap: 2px; } }
+.tag { display: inline-block; background: #eef0f5; border-radius: 6px; padding: 2px 8px; margin: 2px 2px 2px 0; font-size: 0.88rem; }
+.tag.red { background: var(--red-soft); color: var(--red); font-weight: 600; }
+.consult { border-top: 1px solid var(--line); padding: 10px 0; }
+.consult p { margin: 6px 0 0; }
+.ordonnance { background: #fffbea; border: 1px dashed #e0c36a; border-radius: 10px; padding: 8px 12px; margin-top: 8px; }
+.ordonnance ul { margin: 4px 0 0; padding-left: 18px; }
+
+/* Tableaux */
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.data-table th, .data-table td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.data-table th { color: var(--muted); font-weight: 600; font-size: 0.8rem; }
+.data-table td.r, .data-table th.r { text-align: right; }
+.table-wrap { overflow-x: auto; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+.kpi { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+.kpi b { display: block; font-size: 1.5rem; }
+.kpi span { font-size: 0.82rem; color: var(--muted); }
+.grid-2 { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 900px) { .grid-2 { grid-template-columns: 1.5fr 1fr; } }
+.role-pill { font-size: 0.75rem; }
+
+@media print {
+  body * { visibility: hidden; }
+  .health-card, .health-card * { visibility: visible; }
+  .health-card { position: absolute; left: 0; top: 0; width: 86mm; box-shadow: none; font-size: 9pt; }
+}
+
+/* Champs sans type explicite, nombres et dates : même apparence que les autres */
+input:not([type]), input[type="number"], input[type="date"], input[type="email"] {
+  width: 100%; padding: 12px; font-size: 1rem; border: 1px solid var(--line);
+  border-radius: 10px; background: #fff; color: var(--ink); font-family: inherit;
+}

@@ -9,6 +9,11 @@
     const headers = { 'Content-Type': 'application/json' };
     const pin = Sama.getPin();
     if (pin) headers['x-pin'] = pin;
+    // Session de l'espace courant (patient ou professionnel), définie par la page.
+    if (Sama.authKey) {
+      const tok = Sama.store.get(Sama.authKey);
+      if (tok) headers.Authorization = 'Bearer ' + tok;
+    }
     const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
@@ -65,6 +70,19 @@
 
   Sama.time = function (ts) {
     return ts ? new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
+  };
+
+  Sama.fcfa = function (n) {
+    return Number(n || 0) === 0 ? 'Gratuit' : `${Number(n).toLocaleString('fr-FR')} FCFA`;
+  };
+
+  /** "2026-11-22" -> "dimanche 22 novembre" */
+  Sama.date = function (d, opts) {
+    return new Date(d + 'T12:00:00').toLocaleDateString('fr-FR', opts || { weekday: 'long', day: 'numeric', month: 'long' });
+  };
+
+  Sama.isoDay = function (offsetDays = 0) {
+    return new Date(Date.now() + offsetDays * 864e5).toLocaleDateString('sv-SE');
   };
 
   Sama.esc = function (s) {

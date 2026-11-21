@@ -1,18 +1,47 @@
-# SAMA TOUR — MVP gestion des files d'attente
+# SAMA TOUR — le parcours patient, simplement réinventé
 
 > *Moins d'attente. Plus de soins.* — Équipe XEL SANTE · PAS Challenge · SALTIS 2026
 
-Ce MVP couvre le cœur de Sama Tour : **la gestion de la file d'attente** d'une structure de santé.
-Le patient prend un ticket (sur place ou depuis chez lui), suit sa position en temps réel, et il est prévenu
-quand partir de chez lui, quand son tour approche et quand c'est son tour.
+Version en ligne : **https://samatour.onrender.com**
 
-## Les 3 écrans
+Sama Tour accompagne le patient avant, pendant et après la consultation :
+- **file d'attente intelligente** : ticket, suivi en direct, alerte « partez maintenant » ;
+- **rendez-vous en ligne avec paiement intégré** : Wave, Orange Money, Free Money, carte, ou paiement sur place ;
+- **carte de santé numérique** avec QR code et **dossier patient** : allergies, antécédents, consultations, ordonnances, vaccins ;
+- **trois espaces** séparés : patient, personnel médical et administration.
 
-| Écran | Adresse | Pour qui |
+## Les espaces
+
+| Espace | Adresse | Pour qui |
 |---|---|---|
-| **Prendre un ticket / suivre son ticket** | `/` puis `/t/<code>` | Patient, sur son téléphone (rien à installer) |
-| **Console agent / médecin** | `/agent` (PIN démo : `1234`) | Accueil, infirmier, médecin |
+| **Espace patient** | `/patient` | Compte (téléphone + code secret), rendez-vous et paiement, carte de santé, dossier, journal des accès |
+| **Espace soignants** | `/pro` | Médecins, sages-femmes, infirmiers : agenda, arrivée des patients, dossier patient, consultations et ordonnances |
+| **Administration** | `/admin` | Direction : comptes du personnel, tarifs et créneaux, paiements et recettes, remboursements |
+| **Ticket sans rendez-vous** | `/` puis `/t/<code>` | Tout patient, sans compte |
+| **Console de file d'attente** | `/agent` | Accueil et soignants (compte du personnel ou PIN `1234`) |
 | **Écran salle d'attente** | `/ecran` | Une TV ou un vieux PC branché dans la salle |
+
+### Comptes de démonstration (mode `DEMO_MODE=1`, affichés sur les pages de connexion)
+| Espace | Identifiant | Code / mot de passe |
+|---|---|---|
+| Patient (Aminata Diallo) | `77 000 00 01` | `1234` |
+| Médecin (Dr Fatou Sow, médecine générale et pédiatrie) | `dr.sow` | `demo-sante` |
+| Sage-femme (Mme Awa Ndiaye, CPN) | `sf.ndiaye` | `demo-sante` |
+| Accueil | `accueil` | `demo-sante` |
+| Administration | `admin` | `demo-admin` |
+
+### Rendez-vous et paiement
+- Le patient choisit un service, une date et un créneau. Les créneaux sont générés selon les horaires, avec un tarif et une capacité par service, réglables par l'administration.
+- Il paie avec **Wave, Orange Money, Free Money, une carte bancaire, ou sur place**. Le créneau est réservé 15 minutes en attendant le paiement.
+- Confirmation par SMS. Annulation et **remboursement automatique** jusqu'à 2 h avant le rendez-vous.
+- Le jour J, le patient touche « Je suis arrivé(e) » (ou l'accueil le fait pour lui). Il entre dans la file **à l'heure de son rendez-vous**, avant les patients sans rendez-vous, mais après les urgences et les patients prioritaires.
+- **Paiement simulé par défaut** : aucun argent ne circule. Pour encaisser réellement, définir `WAVE_API_KEY` (API Checkout de Wave, voir `lib/payment.js`). Cette intégration est écrite mais **pas encore testée avec un compte marchand**.
+
+### Carte de santé et dossier patient
+- Chaque compte reçoit une **carte numérotée** (`ST-2026-000001`) avec QR code, groupe sanguin, allergies et personne à prévenir. La carte s'imprime au format carte bancaire.
+- **Accès protégé au dossier** : un soignant ne l'ouvre que si le patient a rendez-vous dans son service, s'il lui donne son **code de partage** à 6 chiffres, ou par un **accès d'urgence motivé**.
+- **Chaque accès est tracé** dans un journal que le patient consulte dans son espace. L'administration et l'accueil n'ont **pas** accès au contenu médical.
+- Le soignant enregistre des consultations (constantes, examen, diagnostic, **ordonnance**), met à jour les informations médicales et ajoute des vaccinations.
 
 ### Fonctionnalités
 - **Référentiel de 89 services** couvrant la pyramide sanitaire sénégalaise, du poste de santé aux hôpitaux nationaux (type Fann, Hôpital Principal, Le Dantec, Dalal Jamm), en 14 catégories :
@@ -98,13 +127,19 @@ samatour/
 ├── server.js          Serveur HTTP + API + temps réel (Server-Sent Events), sans dépendance
 ├── config.json        Structure, services, PIN, seuils
 ├── lib/sms.js         Envoi des SMS (simulation, ou API Orange)
+├── lib/store.js       Stockage durable : comptes, dossiers, rendez-vous, paiements, sessions
+├── lib/payment.js     Paiement (simulation, ou Wave)
+├── lib/portals.js     API des espaces patient, soignants et administration
 ├── public/            Pages web (application installable sur téléphone : PWA)
 │   ├── index.html     Prise de ticket
 │   ├── ticket.html    Suivi du ticket
 │   ├── agent.html     Console agent / médecin + statistiques
 │   ├── ecran.html     Écran de la salle d'attente
+│   ├── patient.html   Espace patient (rendez-vous, paiement, carte, dossier)
+│   ├── pro.html       Espace soignants (agenda, dossiers)
+│   ├── admin.html     Administration (personnel, tarifs, paiements)
 │   └── app.js, style.css, sw.js, manifest.webmanifest, icon.svg
-└── data/              Créé automatiquement : db.json (journée en cours) et archive/
+└── data/              Créé automatiquement : db.json (file du jour), store.json (comptes, dossiers, RDV), archive/
 ```
 
 Le seul élément chargé depuis Internet est la bibliothèque de QR codes (cdnjs). Sans Internet, l'adresse s'affiche en texte à la place du QR code. Tout le reste fonctionne sur le réseau local.
@@ -113,18 +148,19 @@ Le seul élément chargé depuis Internet est la bibliothèque de QR codes (cdnj
 
 **Avant le pilote**
 - Hébergement en ligne (Render, Railway, VPS…) avec HTTPS. Les notifications du téléphone exigent HTTPS en dehors du réseau local.
-- Un compte par agent au lieu d'un PIN partagé, et un journal des actions.
+- **Base de données et hébergement agréé pour les données de santé**, avant toute donnée réelle : le stockage JSON du MVP sert à la démonstration. Sur l'offre gratuite de Render, les données sont effacées à chaque redémarrage.
+- Déclaration à la CDP (loi 2008-12) pour le dossier patient.
+- Validation du paiement Wave avec un compte marchand, puis Orange Money et Free Money via un agrégateur.
 - Tester les vrais SMS (Orange) et estimer leur coût par patient.
 - Plusieurs médecins par service (plusieurs bureaux qui appellent dans la même file).
 - Base de données (SQLite ou PostgreSQL) à la place du fichier JSON si la fréquentation dépasse quelques centaines de patients par jour.
 
 **Après le pilote** (feuille de route du pitch)
-- Prise de rendez-vous à l'avance, avec des créneaux.
 - Annonces vocales en wolof (fichiers audio enregistrés).
 - Suivi par WhatsApp.
-- Carte numérique de santé, rappels thérapeutiques, assistant conversationnel. Ces modules manipulent des données de santé et demandent une déclaration à la CDP (loi sénégalaise 2008-12 sur les données personnelles) et un hébergement conforme.
+- Rappels thérapeutiques et assistant conversationnel.
 
 ## Données personnelles
-Le MVP ne collecte **que** le prénom (facultatif) et le téléphone (facultatif), jamais de donnée médicale.
-L'export CSV et les statistiques sont anonymes. Les tickets sont archivés chaque jour dans `data/archive/` : prévoyez
+Le ticket sans rendez-vous ne collecte que le prénom et le téléphone, tous deux facultatifs. Le **dossier patient** contient des données de santé : il est réservé aux soignants autorisés, chaque accès est tracé, et le patient donne son consentement à la création du compte.
+Les codes secrets et mots de passe sont chiffrés (scrypt), et les connexions sont bloquées 5 minutes après 5 échecs. L'export CSV et les statistiques sont anonymes. Les tickets sont archivés chaque jour dans `data/archive/` : prévoyez
 une durée de conservation (par exemple 30 jours) et une mention d'information affichée à l'accueil pendant le pilote.

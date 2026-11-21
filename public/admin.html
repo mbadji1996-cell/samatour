@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2b3fbf">
+  <title>SAMA TOUR · Administration</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/style.css?v=6">
+  <link rel="stylesheet" href="/portal.css?v=3">
+  <style>
+    .bar { height: 10px; background: var(--blue); border-radius: 99px; }
+    .bar-row { display: grid; grid-template-columns: 130px 1fr 90px; gap: 10px; align-items: center; margin: 6px 0; font-size: 0.88rem; }
+    .price-input { width: 90px !important; padding: 6px 8px !important; }
+    .num-input { width: 64px !important; padding: 6px 8px !important; }
+    .shortcuts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+    .shortcut { display: block; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: #fff; text-decoration: none; color: var(--ink); }
+    .shortcut b { display: block; color: var(--blue); }
+    .shortcut span { font-size: 0.85rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/admin"><img src="/logo/samatour-symbole-blanc.svg" alt=""><div><b>SAMA <em>TOUR</em></b><span>Administration</span></div></a>
+    <div class="right"><span id="who"></span><br><a href="#" id="logout" class="small">Quitter</a></div>
+  </header>
+
+  <main class="wrap" id="authView">
+    <form class="card" id="loginForm">
+      <img class="logo-full" src="/logo/samatour-logo.svg" alt="SAMA TOUR" style="margin:6px auto 18px">
+      <h2>Connexion de l'administration</h2>
+      <label for="login">Identifiant</label>
+      <input id="login" type="text" autocomplete="username" required>
+      <label for="password">Mot de passe</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+      <button class="btn block big" style="margin-top:14px">Se connecter</button>
+      <p class="error hidden" id="authError"></p>
+    </form>
+    <div class="banner info small hidden" id="demoBox"></div>
+  </main>
+
+  <main class="wrap wide hidden" id="appView">
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-tab="dash">📊 Tableau de bord</button>
+      <button class="tab" data-tab="staff">👥 Personnel</button>
+      <button class="tab" data-tab="rdv">💳 Rendez-vous et tarifs</button>
+      <button class="tab" data-tab="tools">🧭 Autres outils</button>
+    </div>
+
+    <section data-panel="dash">
+      <div class="kpis" id="kpis"></div>
+      <div class="grid-2">
+        <div class="card">
+          <h2>Derniers paiements</h2>
+          <div class="table-wrap"><table class="data-table" id="payments"></table></div>
+        </div>
+        <div>
+          <div class="card"><h2>Recettes du mois par moyen de paiement</h2><div id="byMethod"></div></div>
+          <div class="card"><h2>Rendez-vous du mois par service</h2><div id="byService"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <section data-panel="staff" class="hidden">
+      <div class="grid-2">
+        <div class="card">
+          <h2>Comptes du personnel</h2>
+          <div class="table-wrap"><table class="data-table" id="staffTable"></table></div>
+        </div>
+        <form class="card" id="staffForm">
+          <h2>Ajouter un membre du personnel</h2>
+          <div class="form-2">
+            <div><label>Titre</label><select id="sTitle"><option>Dr</option><option>Pr</option><option>Mme</option><option>M.</option><option value="">—</option></select></div>
+            <div><label>Nom complet</label><input id="sName" required></div>
+          </div>
+          <label>Rôle</label>
+          <select id="sRole">
+            <option value="medecin">Soignant (médecin, sage-femme, infirmier) : agenda et dossiers patients</option>
+            <option value="accueil">Accueil : agenda, arrivées, encaissement, file d'attente</option>
+            <option value="admin">Administration : comptes, tarifs, paiements (pas d'accès aux dossiers)</option>
+          </select>
+          <label>Services <span class="opt">(codes séparés par des virgules, ex. MG, PED)</span></label>
+          <input id="sServices" placeholder="MG, PED" list="serviceCodes">
+          <datalist id="serviceCodes"></datalist>
+          <div class="form-2">
+            <div><label>Identifiant</label><input id="sLogin" required placeholder="dr.diop"></div>
+            <div><label>Mot de passe provisoire</label><input id="sPassword" type="text" required minlength="8"></div>
+          </div>
+          <button class="btn green block" style="margin-top:14px">Créer le compte</button>
+          <p class="error hidden" id="staffError"></p>
+        </form>
+      </div>
+    </section>
+
+    <section data-panel="rdv" class="hidden">
+      <div class="card">
+        <h2>Prise de rendez-vous en ligne</h2>
+        <p class="small muted" style="margin-top:0" id="rdvInfo"></p>
+        <input id="rdvSearch" type="search" placeholder="🔍 Filtrer les services…" style="margin-bottom:8px">
+        <div class="table-wrap"><table class="data-table" id="rdvTable"></table></div>
+      </div>
+    </section>
+
+    <section data-panel="tools" class="hidden">
+      <div class="shortcuts">
+        <a class="shortcut" href="/agent"><b>File d'attente</b><span>Appeler les patients, tickets à l'accueil</span></a>
+        <a class="shortcut" href="/agent#services"><b>Catalogue des services</b><span>Activer les services, profil de structure (onglet Services de la console)</span></a>
+        <a class="shortcut" href="/agent#stats"><b>Statistiques de la file</b><span>Attente moyenne, absences, satisfaction, export CSV</span></a>
+        <a class="shortcut" href="/ecran" target="_blank"><b>Écran de salle d'attente ↗</b><span>À afficher sur une TV</span></a>
+        <a class="shortcut" href="/pro"><b>Espace soignants</b><span>Agenda et dossiers patients</span></a>
+        <a class="shortcut" href="/patient" target="_blank"><b>Espace patient ↗</b><span>Ce que voient les patients</span></a>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js?v=6"></script>
+  <script>
+  (function () {
+    'use strict';
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => [...document.querySelectorAll(s)];
+    Sama.authKey = 'samatour-staff-token';
+    let user = null, rdvData = null;
+    const PAY = { paid: ['Payé', 'green'], pending: ['En attente', 'amber'], on_site: ['À encaisser', 'amber'], refunded: ['Remboursé', 'grey'], failed: ['Échoué', 'red'], free: ['Gratuit', 'green'] };
+
+    async function init() {
+      const meta = await Sama.api('/api/meta').catch(() => ({}));
+      if (meta.demoAccounts) {
+        const a = meta.demoAccounts.staff.find((x) => x.login === 'admin');
+        $('#demoBox').innerHTML = `<b>Compte de démonstration</b> : <code>${a.login}</code> / <code>${a.password}</code>`;
+        $('#demoBox').classList.remove('hidden');
+      }
+      if (Sama.store.get(Sama.authKey)) {
+        try { user = await Sama.api('/api/pro/me'); if (user.role === 'admin') return show(); } catch { Sama.store.del(Sama.authKey); }
+      }
+      $('#authView').classList.remove('hidden');
+    }
+
+    $('#loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const r = await Sama.api('/api/auth/staff/login', { method: 'POST', body: { login: $('#login').value, password: $('#password').value } });
+        Sama.store.set(Sama.authKey, r.token);
+        user = r.user;
+        if (user.role !== 'admin') { location.href = '/pro'; return; }
+        show();
+      } catch (ex) { $('#authError').textContent = ex.message; $('#authError').classList.remove('hidden'); }
+    });
+    $('#logout').addEventListener('click', async (e) => {
+      e.preventDefault();
+      await Sama.api('/api/auth/logout', { method: 'POST' }).catch(() => {});
+      Sama.store.del(Sama.authKey);
+      location.href = '/admin';
+    });
+
+    function show() {
+      $('#authView').classList.add('hidden');
+      $('#appView').classList.remove('hidden');
+      $('#who').textContent = user.name;
+      loadAll();
+      Sama.live({ update: () => loadDash().catch(() => {}) });
+    }
+    async function loadAll() { await Promise.all([loadDash(), loadStaff(), loadRdv()]); }
+
+    $('#tabs').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-tab]');
+      if (!b) return;
+      $$('#tabs .tab').forEach((t) => t.classList.toggle('on', t === b));
+      $$('[data-panel]').forEach((p) => p.classList.toggle('hidden', p.dataset.panel !== b.dataset.tab));
+    });
+
+    // ---------------- Tableau de bord ----------------
+    async function loadDash() {
+      const o = await Sama.api('/api/admin/overview');
+      $('#kpis').innerHTML = [
+        [Sama.fcfa(o.revenueToday).replace('Gratuit', '0 FCFA'), 'encaissés aujourd\'hui'],
+        [Sama.fcfa(o.revenueMonth).replace('Gratuit', '0 FCFA'), 'encaissés ce mois'],
+        [o.appointmentsToday, 'rendez-vous aujourd\'hui'],
+        [o.appointmentsUpcoming, 'rendez-vous à venir'],
+        [Sama.fcfa(o.onSiteToCollect).replace('Gratuit', '0 FCFA'), 'à encaisser sur place'],
+        [o.patients, 'patients inscrits'],
+        [o.staff, 'comptes du personnel'],
+      ].map(([b, s]) => `<div class="kpi"><b>${b}</b><span>${s}</span></div>`).join('') +
+        (o.paymentMode === 'simulation' ? '<div class="kpi" style="background:var(--amber-soft)"><b style="font-size:1rem">Paiements simulés</b><span>Brancher Wave (WAVE_API_KEY) pour encaisser réellement</span></div>' : '');
+      $('#payments').innerHTML = `<tr><th>Date</th><th>Patient</th><th>Service</th><th class="r">Montant</th><th>Moyen</th><th>Statut</th><th></th></tr>` +
+        o.payments.map((p) => `<tr>
+          <td>${new Date(p.createdAt).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</td>
+          <td>${Sama.esc(p.patient)}</td><td>${Sama.esc(p.serviceName)}<div class="small muted">RDV ${p.date ? Sama.date(p.date, { day: 'numeric', month: 'short' }) : ''} ${p.time || ''}</div></td>
+          <td class="r">${Sama.fcfa(p.amount)}</td><td>${Sama.esc(p.methodName)}<div class="small muted">${Sama.esc(p.providerRef || '')}</div></td>
+          <td><span class="pill ${(PAY[p.status] || ['', 'grey'])[1]}">${(PAY[p.status] || [p.status])[0]}</span></td>
+          <td>${p.status === 'paid' ? `<button class="btn ghost sm" data-refund="${p.id}">Rembourser</button>` : p.status === 'on_site' ? `<button class="btn ghost sm" data-collect="${p.id}">Encaisser</button>` : ''}</td>
+        </tr>`).join('');
+      const bars = (items, label, value, fmt) => {
+        const max = Math.max(1, ...items.map(value));
+        return items.length ? items.map((x) => `<div class="bar-row"><span>${Sama.esc(label(x))}</span><div class="bar" style="width:${Math.max(4, (value(x) / max) * 100)}%"></div><b style="text-align:right">${fmt(value(x))}</b></div>`).join('') : '<p class="muted small">Pas encore de données.</p>';
+      };
+      $('#byMethod').innerHTML = bars(o.byMethod, (x) => x.method, (x) => x.amount, (v) => Sama.fcfa(v));
+      $('#byService').innerHTML = bars(o.byService, (x) => x.name, (x) => x.count, (v) => v);
+    }
+    $('#payments').addEventListener('click', async (e) => {
+      const r = e.target.closest('[data-refund]'), c = e.target.closest('[data-collect]');
+      try {
+        if (r && confirm('Rembourser ce paiement et annuler le rendez-vous ?')) await Sama.api(`/api/admin/payments/${r.dataset.refund}/refund`, { method: 'POST' });
+        if (c) await Sama.api(`/api/admin/payments/${c.dataset.collect}/collect`, { method: 'POST' });
+        loadDash();
+      } catch (err) { alert(err.message); }
+    });
+
+    // ---------------- Personnel ----------------
+    async function loadStaff() {
+      const list = await Sama.api('/api/admin/staff');
+      $('#staffTable').innerHTML = '<tr><th>Nom</th><th>Rôle</th><th>Services</th><th>Identifiant</th><th></th></tr>' + list.map((u) => `
+        <tr style="${u.active ? '' : 'opacity:.5'}">
+          <td><b>${Sama.esc((u.title ? u.title + ' ' : '') + u.name)}</b></td>
+          <td><span class="pill role-pill ${u.role === 'admin' ? 'amber' : u.role === 'medecin' ? '' : 'grey'}">${Sama.esc(u.roleName)}</span></td>
+          <td>${Sama.esc(u.serviceIds.join(', ') || 'tous')}</td>
+          <td><code>${Sama.esc(u.login)}</code></td>
+          <td style="white-space:nowrap">
+            <button class="btn ghost sm" data-pw="${u.id}" title="Nouveau mot de passe">🔑</button>
+            ${u.id === user.id ? '' : `<button class="btn ghost sm" data-toggle="${u.id}" data-active="${u.active ? 1 : 0}">${u.active ? 'Désactiver' : 'Réactiver'}</button>`}
+          </td>
+        </tr>`).join('');
+    }
+    $('#staffTable').addEventListener('click', async (e) => {
+      const t = e.target.closest('[data-toggle]'), p = e.target.closest('[data-pw]');
+      try {
+        if (t) await Sama.api(`/api/admin/staff/${t.dataset.toggle}/update`, { method: 'POST', body: { active: t.dataset.active !== '1' } });
+        if (p) {
+          const pw = prompt('Nouveau mot de passe (8 caractères minimum) :');
+          if (pw) await Sama.api(`/api/admin/staff/${p.dataset.pw}/update`, { method: 'POST', body: { password: pw } });
+        }
+        loadStaff();
+      } catch (err) { alert(err.message); }
+    });
+    $('#staffForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        await Sama.api('/api/admin/staff', { method: 'POST', body: {
+          title: $('#sTitle').value, name: $('#sName').value, role: $('#sRole').value, serviceIds: $('#sServices').value,
+          login: $('#sLogin').value, password: $('#sPassword').value,
+        } });
+        $('#staffForm').reset();
+        $('#staffError').classList.add('hidden');
+        loadStaff();
+      } catch (err) { $('#staffError').textContent = err.message; $('#staffError').classList.remove('hidden'); }
+    });
+
+    // ---------------- Rendez-vous et tarifs ----------------
+    const DAYS = ['dim.', 'lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.'];
+    async function loadRdv() {
+      rdvData = await Sama.api('/api/admin/rdv-settings');
+      const r = rdvData.rdv;
+      $('#rdvInfo').innerHTML = `Créneaux de ${r.start} à ${r.end}, ${r.days.map((d) => DAYS[d]).join(' ')} (réglables dans <code>config.json</code>, clé <code>rdv</code>). Tarifs indicatifs, à adapter à votre structure. Un tarif à 0 rend le service gratuit.`;
+      $('#serviceCodes').innerHTML = rdvData.services.map((s) => `<option value="${s.id}">${Sama.esc(s.name)}</option>`).join('');
+      renderRdv();
+    }
+    $('#rdvSearch').addEventListener('input', renderRdv);
+    function renderRdv() {
+      const q = $('#rdvSearch').value.toLowerCase();
+      const list = rdvData.services.filter((s) => !q || (s.name + ' ' + s.id + ' ' + s.category).toLowerCase().includes(q));
+      $('#rdvTable').innerHTML = '<tr><th>Service</th><th>En ligne</th><th>Tarif (FCFA)</th><th>Créneau (min)</th><th>Patients / créneau</th><th></th></tr>' + list.map((s) => `
+        <tr data-row="${s.id}">
+          <td><b>${Sama.esc(s.name)}</b><div class="small muted">${Sama.esc(s.category)} · ${s.id}</div></td>
+          <td><input type="checkbox" data-f="rdvEnabled" ${s.rdvEnabled ? 'checked' : ''}></td>
+          <td><input class="price-input" type="number" min="0" step="500" data-f="price" value="${s.price}"></td>
+          <td><input class="num-input" type="number" min="5" step="5" data-f="slotMinutes" value="${s.slotMinutes}"></td>
+          <td><input class="num-input" type="number" min="1" data-f="rdvCapacity" value="${s.rdvCapacity}"></td>
+          <td><button class="btn sm" data-save="${s.id}">Enregistrer</button></td>
+        </tr>`).join('');
+    }
+    $('#rdvTable').addEventListener('click', async (e) => {
+      const b = e.target.closest('[data-save]');
+      if (!b) return;
+      const row = b.closest('tr');
+      const body = {};
+      row.querySelectorAll('[data-f]').forEach((i) => (body[i.dataset.f] = i.type === 'checkbox' ? i.checked : Number(i.value)));
+      try {
+        const r = await Sama.api(`/api/admin/services/${b.dataset.save}/rdv`, { method: 'POST', body });
+        Object.assign(rdvData.services.find((s) => s.id === r.id), r);
+        b.textContent = '✓ Enregistré';
+        setTimeout(() => (b.textContent = 'Enregistrer'), 1800);
+      } catch (err) { alert(err.message); }
+    });
+
+    init();
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2b3fbf">
+  <title>SAMA TOUR · Espace soignants</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/style.css?v=6">
+  <link rel="stylesheet" href="/portal.css?v=3">
+  <style>
+    .agenda-row { display: grid; grid-template-columns: 64px 1fr auto; gap: 12px; align-items: start; padding: 12px 0; border-top: 1px solid var(--line); }
+    .agenda-row:first-child { border-top: 0; }
+    .agenda-time { font-size: 1.15rem; font-weight: 800; color: var(--blue); }
+    .agenda-row.done .agenda-time, .agenda-row.no_show .agenda-time, .agenda-row.cancelled .agenda-time { color: var(--muted); }
+    .agenda-actions { display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
+    @media (max-width: 560px) { .agenda-row { grid-template-columns: 52px 1fr; } .agenda-actions { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; } }
+    .patient-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .patient-head h2 { margin: 0; font-size: 1.3rem; }
+    .alert-allergy { background: var(--red-soft); color: var(--red); font-weight: 700; border-radius: 10px; padding: 8px 12px; margin: 10px 0; }
+    .rx-line { display: grid; grid-template-columns: 1.4fr 1.4fr 0.8fr 32px; gap: 6px; margin-top: 6px; }
+    @media (max-width: 560px) { .rx-line { grid-template-columns: 1fr 1fr; } }
+    textarea { width: 100%; padding: 10px; font: inherit; border: 1px solid var(--line); border-radius: 10px; min-height: 80px; resize: vertical; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/pro"><img src="/logo/samatour-symbole-blanc.svg" alt=""><div><b>SAMA <em>TOUR</em></b><span>Espace soignants</span></div></a>
+    <div class="right"><span id="who"></span><br><span id="links" class="small"></span></div>
+  </header>
+
+  <main class="wrap" id="authView">
+    <form class="card" id="loginForm">
+      <img class="logo-full" src="/logo/samatour-logo.svg" alt="SAMA TOUR" style="margin:6px auto 18px">
+      <h2>Connexion du personnel</h2>
+      <label for="login">Identifiant</label>
+      <input id="login" type="text" autocomplete="username" required>
+      <label for="password">Mot de passe</label>
+      <input id="password" type="password" autocomplete="current-password" required>
+      <button class="btn block big" style="margin-top:14px">Se connecter</button>
+      <p class="error hidden" id="authError"></p>
+    </form>
+    <div class="banner info small hidden" id="demoBox"></div>
+  </main>
+
+  <main class="wrap wide hidden" id="appView">
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-tab="agenda">📅 Agenda</button>
+      <button class="tab" data-tab="dossier" id="dossierTab">📁 Dossier patient</button>
+    </div>
+
+    <section data-panel="agenda">
+      <div class="card">
+        <div class="patient-head">
+          <h2 id="agendaTitle">Rendez-vous</h2>
+          <input type="date" id="agendaDate" style="width:auto">
+        </div>
+        <div id="agenda" style="margin-top:10px"></div>
+      </div>
+    </section>
+
+    <section data-panel="dossier" class="hidden">
+      <div class="card" id="searchCard">
+        <h2>Trouver un patient</h2>
+        <p class="small muted" style="margin-top:0">Scannez le QR code de sa carte de santé, ou saisissez son numéro de carte ou de téléphone.</p>
+        <form id="searchForm" class="profile-row" style="display:flex;gap:8px">
+          <input id="q" type="search" placeholder="ST-2026-000001 ou 77 000 00 01" style="flex:1">
+          <button class="btn">Rechercher</button>
+        </form>
+        <div id="results" style="margin-top:8px"></div>
+        <div id="openBox" class="hidden" style="margin-top:12px"></div>
+      </div>
+      <div id="record"></div>
+    </section>
+  </main>
+
+  <script src="/app.js?v=6"></script>
+  <script>
+  (function () {
+    'use strict';
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => [...document.querySelectorAll(s)];
+    Sama.authKey = 'samatour-staff-token';
+    let user = null, agenda = null, current = null, rx = [{}];
+    const STATUS = {
+      confirmed: ['Confirmé', ''], checked_in: ['Arrivé · en file', 'green'], done: ['Vu', 'grey'],
+      no_show: ['Absent', 'red'], cancelled: ['Annulé', 'red'], pending_payment: ['Paiement en attente', 'amber'],
+    };
+    const PAY = { paid: ['Payé', 'green'], on_site: ['À encaisser', 'amber'], refunded: ['Remboursé', 'grey'], free: ['Gratuit', 'green'], pending: ['En attente', 'amber'] };
+    const pill = (x) => x ? `<span class="pill ${x[1]}">${x[0]}</span>` : '';
+
+    async function init() {
+      const meta = await Sama.api('/api/meta').catch(() => ({}));
+      if (meta.demoAccounts) {
+        $('#demoBox').innerHTML = '<b>Comptes de démonstration</b><br>' + meta.demoAccounts.staff.map((a) =>
+          `<code>${a.login}</code> / <code>${a.password}</code> : ${Sama.esc(a.label)}`).join('<br>');
+        $('#demoBox').classList.remove('hidden');
+      }
+      if (Sama.store.get(Sama.authKey)) {
+        try { user = await Sama.api('/api/pro/me'); return show(); } catch { Sama.store.del(Sama.authKey); }
+      }
+      $('#authView').classList.remove('hidden');
+    }
+
+    $('#loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const r = await Sama.api('/api/auth/staff/login', { method: 'POST', body: { login: $('#login').value, password: $('#password').value } });
+        Sama.store.set(Sama.authKey, r.token);
+        user = r.user;
+        if (user.role === 'admin' && !new URLSearchParams(location.search).get('carte')) { location.href = '/admin'; return; }
+        show();
+      } catch (ex) { $('#authError').textContent = ex.message; $('#authError').classList.remove('hidden'); }
+    });
+
+    function show() {
+      $('#authView').classList.add('hidden');
+      $('#appView').classList.remove('hidden');
+      $('#who').textContent = `${user.title ? user.title + ' ' : ''}${user.name} · ${user.roleName}`;
+      $('#links').innerHTML = `<a href="/agent">File d'attente</a>${user.role === 'admin' ? ' · <a href="/admin">Administration</a>' : ''} · <a href="#" id="logout">Quitter</a>`;
+      $('#logout').addEventListener('click', async (e) => {
+        e.preventDefault();
+        await Sama.api('/api/auth/logout', { method: 'POST' }).catch(() => {});
+        Sama.store.del(Sama.authKey);
+        location.href = '/pro';
+      });
+      $('#dossierTab').classList.toggle('hidden', user.role !== 'medecin');
+      $('#agendaDate').value = Sama.isoDay();
+      loadAgenda();
+      Sama.live({ update: () => loadAgenda().catch(() => {}) });
+      // Arrivée depuis le QR code d'une carte de santé
+      const carte = new URLSearchParams(location.search).get('carte');
+      if (carte && user.role === 'medecin') { selectTab('dossier'); $('#q').value = carte; search(); }
+    }
+
+    function selectTab(name) {
+      $$('#tabs .tab').forEach((t) => t.classList.toggle('on', t.dataset.tab === name));
+      $$('[data-panel]').forEach((p) => p.classList.toggle('hidden', p.dataset.panel !== name));
+    }
+    $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) selectTab(b.dataset.tab); });
+
+    // ---------------- Agenda ----------------
+    $('#agendaDate').addEventListener('change', loadAgenda);
+    async function loadAgenda() {
+      agenda = await Sama.api('/api/pro/agenda?date=' + $('#agendaDate').value);
+      const services = user.role === 'medecin' && user.serviceIds.length ? user.serviceIds.join(', ') : 'tous les services';
+      $('#agendaTitle').innerHTML = `Rendez-vous du ${Sama.date(agenda.date)} <span class="small muted">· ${Sama.esc(services)}</span>`;
+      const list = agenda.appointments;
+      $('#agenda').innerHTML = list.length ? list.map((a) => `
+        <div class="agenda-row ${a.status}">
+          <div class="agenda-time">${a.time}</div>
+          <div>
+            <div><b>${Sama.esc(a.patient.name)}</b> <span class="small muted">${a.patient.age != null ? a.patient.age + ' ans' : ''} ${a.patient.sex ? '· ' + a.patient.sex : ''} · ${Sama.esc(a.patient.cardNumber || '')}</span></div>
+            <div class="small">${Sama.esc(a.serviceName)}${a.motif ? ' · <i>' + Sama.esc(a.motif) + '</i>' : ''}</div>
+            <div style="margin-top:4px">${pill(STATUS[a.status])} ${a.payment ? pill(PAY[a.payment.status]) : ''} <span class="small muted">${a.payment && a.payment.amount ? Sama.fcfa(a.payment.amount) + ' · ' + Sama.esc(a.payment.methodName || '') : ''}</span></div>
+          </div>
+          <div class="agenda-actions">
+            ${a.canCheckin ? `<button class="btn sm green" data-checkin="${a.id}">Patient arrivé</button>` : ''}
+            ${a.payment && a.payment.status === 'on_site' && user.role !== 'medecin' ? `<button class="btn sm amber" data-collect="${a.payment.id}">Encaisser ${Sama.fcfa(a.payment.amount)}</button>` : ''}
+            ${user.role === 'medecin' && a.status !== 'cancelled' ? `<button class="btn sm" data-open="${a.patient.id}">Ouvrir le dossier</button>` : ''}
+            ${['confirmed', 'checked_in'].includes(a.status) ? `<button class="btn sm ghost" data-noshow="${a.id}">Absent</button>` : ''}
+          </div>
+        </div>`).join('') : '<p class="muted">Aucun rendez-vous ce jour-là.</p>';
+    }
+
+    $('#agenda').addEventListener('click', async (e) => {
+      const c = e.target.closest('[data-checkin]'), o = e.target.closest('[data-open]'), n = e.target.closest('[data-noshow]'), k = e.target.closest('[data-collect]');
+      try {
+        if (c) { const t = await Sama.api(`/api/pro/appointments/${c.dataset.checkin}/checkin`, { method: 'POST' }); alert(`Ticket ${t.number} créé : le patient passe à l'heure de son rendez-vous.`); }
+        if (n && confirm('Marquer ce patient absent ?')) await Sama.api(`/api/pro/appointments/${n.dataset.noshow}/status`, { method: 'POST', body: { status: 'no_show' } });
+        if (k) await Sama.api(`/api/admin/payments/${k.dataset.collect}/collect`, { method: 'POST' });
+        if (o) { selectTab('dossier'); await openDossier(o.dataset.open, {}); }
+        await loadAgenda();
+      } catch (err) { alert(err.message); }
+    });
+
+    // ---------------- Recherche et ouverture du dossier ----------------
+    $('#searchForm').addEventListener('submit', (e) => { e.preventDefault(); search(); });
+    async function search() {
+      const r = await Sama.api('/api/pro/patients/search?q=' + encodeURIComponent($('#q').value));
+      $('#openBox').classList.add('hidden');
+      $('#results').innerHTML = r.length ? r.map((p) => `
+        <div class="row"><div class="who"><b>${Sama.esc(p.name)}</b><div class="meta">${Sama.esc(p.cardNumber)} · né(e) en ${p.birthYear || '—'} ${p.sex ? '· ' + p.sex : ''}</div></div>
+        <button class="btn sm" data-pick="${p.id}" data-name="${Sama.esc(p.name)}">Ouvrir</button></div>`).join('')
+        : '<p class="muted small">Aucun patient trouvé.</p>';
+    }
+    $('#results').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-pick]');
+      if (b) openDossier(b.dataset.pick, {}, b.dataset.name);
+    });
+
+    async function openDossier(id, body, name) {
+      try {
+        current = await Sama.api(`/api/pro/dossiers/${id}/open`, { method: 'POST', body });
+        $('#openBox').classList.add('hidden');
+        renderRecord();
+      } catch (err) {
+        if (err.status !== 403) return alert(err.message);
+        // Pas de rendez-vous avec ce patient : code de partage ou accès d'urgence.
+        $('#openBox').innerHTML = `
+          <div class="banner amber small">${Sama.esc(err.message)}</div>
+          <p style="margin:0 0 6px"><b>${Sama.esc(name || 'Patient')}</b></p>
+          <form id="codeForm" style="display:flex;gap:8px"><input id="code" inputmode="numeric" maxlength="6" placeholder="Code de partage (6 chiffres)" style="flex:1"><button class="btn">Ouvrir</button></form>
+          <details style="margin-top:10px"><summary class="small">Accès d'urgence (patient inconscient…)</summary>
+            <form id="urgForm" style="margin-top:8px"><input id="reason" placeholder="Motif de l'urgence (obligatoire, tracé dans le dossier)">
+            <button class="btn red sm" style="margin-top:8px">Ouvrir en urgence</button></form></details>`;
+        $('#openBox').classList.remove('hidden');
+        $('#codeForm').addEventListener('submit', (e) => { e.preventDefault(); openDossier(id, { code: $('#code').value }, name); });
+        $('#urgForm').addEventListener('submit', (e) => { e.preventDefault(); openDossier(id, { emergency: true, reason: $('#reason').value }, name); });
+      }
+    }
+
+    // ---------------- Dossier ----------------
+    function renderRecord() {
+      const p = current, d = p.dossier;
+      const tags = (xs, cls = '') => xs.length ? xs.map((x) => `<span class="tag ${cls}">${Sama.esc(x)}</span>`).join(' ') : '<span class="muted">—</span>';
+      const myServices = user.serviceIds.length ? user.serviceIds : [''];
+      $('#record').innerHTML = `
+        <div class="card">
+          <div class="patient-head">
+            <div><h2>${Sama.esc(p.firstName)} ${Sama.esc(p.lastName.toUpperCase())}</h2>
+              <div class="small muted">${p.age != null ? p.age + ' ans' : ''} ${p.sex ? '· ' + (p.sex === 'F' ? 'Femme' : 'Homme') : ''} · ${Sama.esc(p.cardNumber)} · ${Sama.esc(p.phone)}</div></div>
+            <div class="small">Groupe sanguin <b style="font-size:1.2rem">${Sama.esc(d.bloodGroup || '—')}</b></div>
+          </div>
+          ${d.allergies.length ? `<div class="alert-allergy">⚠ Allergies : ${d.allergies.map(Sama.esc).join(', ')}</div>` : ''}
+          <div class="kv"><span>Antécédents</span><div>${tags(d.conditions)}</div></div>
+          <div class="kv"><span>Traitements en cours</span><div>${tags(d.treatments)}</div></div>
+          ${p.emergencyContact && p.emergencyContact.name ? `<div class="kv"><span>Personne à prévenir</span><div>${Sama.esc(p.emergencyContact.name)} · ${Sama.esc(p.emergencyContact.phone)}</div></div>` : ''}
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <form class="card" id="consultForm">
+              <h2>Nouvelle consultation</h2>
+              <div class="form-2">
+                <div><label>Service</label><select id="cService">${myServices.map((s) => `<option>${Sama.esc(s)}</option>`).join('')}</select></div>
+                <div><label>Motif</label><input id="cMotif" required></div>
+              </div>
+              <div class="form-2" style="grid-template-columns:1fr 1fr 1fr">
+                <div><label>Tension</label><input id="cTension" placeholder="12/8"></div>
+                <div><label>Temp. (°C)</label><input id="cTemp" placeholder="37,2"></div>
+                <div><label>Poids (kg)</label><input id="cPoids"></div>
+              </div>
+              <label>Examen et observations</label>
+              <textarea id="cNotes"></textarea>
+              <label>Diagnostic</label>
+              <input id="cDiag">
+              <label>Ordonnance</label>
+              <div id="rx"></div>
+              <button type="button" class="btn link sm" id="rxAdd">+ Ajouter un médicament</button>
+              <button class="btn green block" style="margin-top:12px">Enregistrer la consultation</button>
+            </form>
+            <div class="card">
+              <h2>Historique (${d.consultations.length})</h2>
+              ${d.consultations.map((c) => `
+                <details class="consult"><summary><b>${new Date(c.at).toLocaleDateString('fr-FR')}</b> · ${Sama.esc(c.motif)} <span class="small muted">· ${Sama.esc(c.doctor)}</span></summary>
+                  ${c.diagnostic ? `<p><b>Diagnostic :</b> ${Sama.esc(c.diagnostic)}</p>` : ''}
+                  ${c.vitals && (c.vitals.tension || c.vitals.temperature) ? `<p class="small">TA ${Sama.esc(c.vitals.tension || '—')} · T° ${Sama.esc(c.vitals.temperature || '—')} · ${Sama.esc(c.vitals.poids || '—')} kg</p>` : ''}
+                  ${c.notes ? `<p class="small">${Sama.esc(c.notes)}</p>` : ''}
+                  ${c.prescription.length ? `<div class="ordonnance"><b>Ordonnance</b><ul>${c.prescription.map((l) => `<li><b>${Sama.esc(l.med)}</b> : ${Sama.esc(l.posologie)}${l.duree ? ', ' + Sama.esc(l.duree) : ''}</li>`).join('')}</ul></div>` : ''}
+                </details>`).join('') || '<p class="muted">Aucune consultation.</p>'}
+            </div>
+          </div>
+          <div>
+            <form class="card" id="medForm">
+              <h2>Informations médicales</h2>
+              <label>Groupe sanguin</label>
+              <select id="mBlood">${['', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'].map((g) => `<option ${g === d.bloodGroup ? 'selected' : ''}>${g}</option>`).join('')}</select>
+              <label>Allergies <span class="opt">(une par ligne)</span></label><textarea id="mAllergies">${Sama.esc(d.allergies.join('\n'))}</textarea>
+              <label>Antécédents</label><textarea id="mConditions">${Sama.esc(d.conditions.join('\n'))}</textarea>
+              <label>Traitements en cours</label><textarea id="mTreatments">${Sama.esc(d.treatments.join('\n'))}</textarea>
+              <button class="btn block" style="margin-top:10px">Mettre à jour</button>
+            </form>
+            <form class="card" id="vacForm">
+              <h2>Vaccinations</h2>
+              ${d.vaccinations.map((v) => `<div class="kv"><span>${new Date(v.date + 'T12:00').toLocaleDateString('fr-FR')}</span><div>${Sama.esc(v.name)}</div></div>`).join('') || '<p class="muted small">Aucune.</p>'}
+              <div class="form-2"><div><label>Vaccin</label><input id="vName" required></div><div><label>Date</label><input id="vDate" type="date" value="${Sama.isoDay()}"></div></div>
+              <button class="btn ghost block" style="margin-top:10px">Ajouter</button>
+            </form>
+            <div class="card">
+              <h2>Journal des accès</h2>
+              ${d.accessLog.slice(0, 8).map((l) => `<div class="kv"><span>${new Date(l.at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</span><div class="small">${Sama.esc(l.who)} · ${Sama.esc(l.action)}${l.reason ? ' (' + Sama.esc(l.reason) + ')' : ''}</div></div>`).join('')}
+              <p class="small muted">Le patient voit ce journal dans son espace.</p>
+            </div>
+          </div>
+        </div>`;
+      rx = [{}];
+      renderRx();
+      $('#record').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function renderRx() {
+      $('#rx').innerHTML = rx.map((l, i) => `<div class="rx-line">
+        <input placeholder="Médicament, dosage" data-rx="${i}" data-k="med" value="${Sama.esc(l.med || '')}">
+        <input placeholder="Posologie" data-rx="${i}" data-k="posologie" value="${Sama.esc(l.posologie || '')}">
+        <input placeholder="Durée" data-rx="${i}" data-k="duree" value="${Sama.esc(l.duree || '')}">
+        <button type="button" class="btn ghost sm" data-rxdel="${i}" title="Retirer">✕</button></div>`).join('');
+    }
+
+    document.addEventListener('input', (e) => { const i = e.target.dataset.rx; if (i !== undefined) rx[i][e.target.dataset.k] = e.target.value; });
+    document.addEventListener('click', (e) => {
+      if (e.target.id === 'rxAdd') { rx.push({}); renderRx(); }
+      const del = e.target.closest('[data-rxdel]');
+      if (del) { rx.splice(Number(del.dataset.rxdel), 1); if (!rx.length) rx.push({}); renderRx(); }
+    });
+
+    document.addEventListener('submit', async (e) => {
+      const id = e.target.id;
+      if (!['consultForm', 'medForm', 'vacForm'].includes(id)) return;
+      e.preventDefault();
+      const lines = (v) => v.split('\n').map((x) => x.trim()).filter(Boolean);
+      try {
+        if (id === 'consultForm') {
+          current = await Sama.api(`/api/pro/dossiers/${current.id}/consultations`, { method: 'POST', body: {
+            serviceId: $('#cService').value, motif: $('#cMotif').value, notes: $('#cNotes').value, diagnostic: $('#cDiag').value,
+            vitals: { tension: $('#cTension').value, temperature: $('#cTemp').value, poids: $('#cPoids').value },
+            prescription: rx.filter((l) => l.med),
+          } });
+          loadAgenda();
+        }
+        if (id === 'medForm') {
+          current = await Sama.api(`/api/pro/dossiers/${current.id}/medical`, { method: 'POST', body: {
+            bloodGroup: $('#mBlood').value, allergies: lines($('#mAllergies').value), conditions: lines($('#mConditions').value), treatments: lines($('#mTreatments').value),
+          } });
+        }
+        if (id === 'vacForm') {
+          current = await Sama.api(`/api/pro/dossiers/${current.id}/vaccinations`, { method: 'POST', body: { name: $('#vName').value, date: $('#vDate').value } });
+        }
+        renderRecord();
+      } catch (err) { alert(err.message); }
+    });
+
+    init();
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2b3fbf">
+  <title>SAMA TOUR · Mon espace santé</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="apple-touch-icon" href="/logo/png/samatour-symbole-192.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/style.css?v=6">
+  <link rel="stylesheet" href="/portal.css?v=3">
+</head>
+<body>
+  <header class="topbar no-print">
+    <a class="brand" href="/patient"><img src="/logo/samatour-symbole-blanc.svg" alt=""><div><b>SAMA <em>TOUR</em></b><span>Mon espace santé</span></div></a>
+    <div class="right"><span id="who"></span><br><a href="/" style="color:#fff" class="small">Ticket sans RDV</a></div>
+  </header>
+
+  <!-- Connexion / inscription -->
+  <main class="wrap" id="authView">
+    <div class="card">
+      <div class="tabs seg-tabs" id="authTabs">
+        <button class="tab on" data-auth="login">Se connecter</button>
+        <button class="tab" data-auth="register">Créer mon compte</button>
+      </div>
+      <form id="loginForm">
+        <label for="lPhone">Numéro de téléphone</label>
+        <input id="lPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="77 123 45 67" required>
+        <label for="lPin">Code secret</label>
+        <input id="lPin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="6" required>
+        <button class="btn big block" style="margin-top:14px">Se connecter</button>
+      </form>
+      <form id="registerForm" class="hidden">
+        <div class="form-2">
+          <div><label for="rFirst">Prénom</label><input id="rFirst" type="text" autocomplete="given-name" required></div>
+          <div><label for="rLast">Nom</label><input id="rLast" type="text" autocomplete="family-name" required></div>
+        </div>
+        <div class="form-2">
+          <div><label for="rBirth">Date de naissance</label><input id="rBirth" type="date"></div>
+          <div><label for="rSex">Sexe</label><select id="rSex"><option value="">—</option><option value="F">Femme</option><option value="M">Homme</option></select></div>
+        </div>
+        <label for="rPhone">Numéro de téléphone</label>
+        <input id="rPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="77 123 45 67" required>
+        <label for="rPin">Choisissez un code secret <span class="opt">(4 à 6 chiffres)</span></label>
+        <input id="rPin" type="password" inputmode="numeric" autocomplete="new-password" maxlength="6" required>
+        <label class="check" style="margin-top:12px"><input type="checkbox" id="rConsent" required> J'accepte que mes informations de santé soient conservées par SAMA TOUR et consultées uniquement par les soignants que j'autorise.</label>
+        <button class="btn big block green" style="margin-top:14px">Créer mon compte et ma carte de santé</button>
+      </form>
+      <p class="error hidden" id="authError"></p>
+    </div>
+    <div class="banner info small hidden" id="demoBox"></div>
+  </main>
+
+  <!-- Espace connecté -->
+  <main class="wrap hidden" id="appView">
+    <div class="tabs" id="tabs">
+      <button class="tab on" data-tab="rdv">📅 Rendez-vous</button>
+      <button class="tab" data-tab="card">🪪 Ma carte</button>
+      <button class="tab" data-tab="dossier">📁 Mon dossier</button>
+      <button class="tab" data-tab="profile">👤 Profil</button>
+    </div>
+
+    <!-- Rendez-vous -->
+    <section data-panel="rdv">
+      <div id="rdvList"></div>
+      <button class="btn big block" id="newRdvBtn">+ Prendre un rendez-vous</button>
+
+      <div class="card hidden" id="booking">
+        <div class="steps" id="steps"><span class="on">1. Service</span><span>2. Créneau</span><span>3. Paiement</span></div>
+
+        <div data-step="1">
+          <input id="bSearch" type="search" placeholder="🔍 Quel service ? (dentiste, cardiologie, écho…)" autocomplete="off">
+          <div id="bServices" class="choices" style="margin-top:10px"></div>
+        </div>
+
+        <div data-step="2" class="hidden">
+          <div class="picked-line" id="bPicked"></div>
+          <label>Date</label>
+          <div class="day-strip" id="bDays"></div>
+          <label>Heure</label>
+          <div class="slots" id="bSlots"></div>
+        </div>
+
+        <div data-step="3" class="hidden">
+          <div class="summary" id="bSummary"></div>
+          <label for="bMotif">Motif <span class="opt">(facultatif, visible par le soignant)</span></label>
+          <input id="bMotif" type="text" maxlength="200" placeholder="Ex. douleur au genou depuis 2 semaines">
+          <label>Moyen de paiement</label>
+          <div class="pay-methods" id="bMethods"></div>
+          <div id="bPayPhoneBox">
+            <label for="bPayPhone">Numéro du compte mobile money</label>
+            <input id="bPayPhone" type="tel" inputmode="tel">
+          </div>
+          <button class="btn big block green" id="bPay" style="margin-top:14px">Payer et confirmer</button>
+          <p class="small muted" style="margin-top:8px">Annulation gratuite et remboursement jusqu'à 2 h avant le rendez-vous.</p>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;margin-top:10px">
+          <button class="btn link" id="bBack">← Retour</button>
+          <button class="btn link" id="bCancel">Annuler</button>
+        </div>
+        <p class="error hidden" id="bError"></p>
+      </div>
+    </section>
+
+    <!-- Carte de santé -->
+    <section data-panel="card" class="hidden">
+      <div class="health-card" id="healthCard"></div>
+      <div class="card">
+        <h2>Code de partage : <span class="share-code" id="shareCode"></span></h2>
+        <p class="small muted" style="margin:0 0 10px">Au début d'une consultation, le soignant scanne votre carte. Donnez-lui ce code pour qu'il ouvre votre dossier. Si vous avez rendez-vous dans son service, le code n'est pas nécessaire.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn ghost" id="newCode">↻ Nouveau code</button>
+          <button class="btn ghost" onclick="window.print()">🖨 Imprimer ma carte</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Dossier -->
+    <section data-panel="dossier" class="hidden">
+      <div id="dossier"></div>
+    </section>
+
+    <!-- Profil -->
+    <section data-panel="profile" class="hidden">
+      <form class="card" id="profileForm">
+        <h2>Mes informations</h2>
+        <div class="form-2">
+          <div><label for="pFirst">Prénom</label><input id="pFirst" type="text"></div>
+          <div><label for="pLast">Nom</label><input id="pLast" type="text"></div>
+        </div>
+        <div class="form-2">
+          <div><label for="pBirth">Date de naissance</label><input id="pBirth" type="date"></div>
+          <div><label for="pSex">Sexe</label><select id="pSex"><option value="">—</option><option value="F">Femme</option><option value="M">Homme</option></select></div>
+        </div>
+        <label for="pAddress">Adresse / quartier</label>
+        <input id="pAddress" type="text" maxlength="100">
+        <h3>Personne à prévenir en cas d'urgence</h3>
+        <div class="form-2">
+          <div><label for="pEmName">Nom et lien</label><input id="pEmName" type="text" maxlength="60"></div>
+          <div><label for="pEmPhone">Téléphone</label><input id="pEmPhone" type="tel"></div>
+        </div>
+        <button class="btn" style="margin-top:14px">Enregistrer</button>
+        <span class="small muted" id="profileSaved"></span>
+      </form>
+      <button class="btn ghost block" id="logout">Se déconnecter</button>
+    </section>
+  </main>
+
+  <!-- Paiement (simulation mobile money) -->
+  <div class="modal-bg hidden" id="payModal">
+    <div class="modal" id="payBox"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="/app.js?v=6"></script>
+  <script>
+  (function () {
+    'use strict';
+    const $ = (s, r = document) => r.querySelector(s);
+    const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+    Sama.authKey = 'samatour-patient-token';
+    let me = null, meta = null, rdvServices = [];
+    const B = { step: 1, service: null, date: null, time: null, method: null };
+
+    const STATUS = {
+      pending_payment: ['En attente de paiement', 'amber'], confirmed: ['Confirmé', 'green'], checked_in: ['Arrivé, en file', 'green'],
+      done: ['Terminé', 'grey'], cancelled: ['Annulé', 'red'], no_show: ['Absent', 'red'], expired: ['Expiré', 'grey'],
+    };
+    const PAY = { paid: ['Payé', 'green'], pending: ['Paiement en attente', 'amber'], on_site: ['À régler sur place', 'amber'], refunded: ['Remboursé', 'grey'], failed: ['Échoué', 'red'], free: ['Gratuit', 'green'] };
+    const pill = ([t, c]) => `<span class="pill ${c}">${t}</span>`;
+
+    // ---------------- Connexion ----------------
+    async function init() {
+      meta = await Sama.api('/api/meta').catch(() => ({}));
+      if (meta.demoAccounts) {
+        const d = meta.demoAccounts.patient;
+        $('#demoBox').innerHTML = `<b>Compte de démonstration</b> : téléphone <code>${d.phone}</code>, code secret <code>${d.pin}</code> (${Sama.esc(d.name)}). Les paiements sont simulés : aucun argent ne circule.`;
+        $('#demoBox').classList.remove('hidden');
+      }
+      if (Sama.store.get(Sama.authKey)) {
+        try { await load(); return show(); } catch { Sama.store.del(Sama.authKey); }
+      }
+      $('#authView').classList.remove('hidden');
+    }
+
+    $('#authTabs').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-auth]');
+      if (!b) return;
+      $$('#authTabs .tab').forEach((t) => t.classList.toggle('on', t === b));
+      $('#loginForm').classList.toggle('hidden', b.dataset.auth !== 'login');
+      $('#registerForm').classList.toggle('hidden', b.dataset.auth !== 'register');
+      $('#authError').classList.add('hidden');
+    });
+
+    async function authed(promise) {
+      try {
+        const r = await promise;
+        Sama.store.set(Sama.authKey, r.token);
+        me = r.patient;
+        show();
+      } catch (e) { $('#authError').textContent = e.message; $('#authError').classList.remove('hidden'); }
+    }
+    $('#loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      authed(Sama.api('/api/auth/patient/login', { method: 'POST', body: { phone: $('#lPhone').value, pin: $('#lPin').value } }));
+    });
+    $('#registerForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      authed(Sama.api('/api/auth/patient/register', { method: 'POST', body: {
+        firstName: $('#rFirst').value, lastName: $('#rLast').value, birthDate: $('#rBirth').value, sex: $('#rSex').value,
+        phone: $('#rPhone').value, pin: $('#rPin').value,
+      } }));
+    });
+    $('#logout').addEventListener('click', async () => {
+      await Sama.api('/api/auth/logout', { method: 'POST' }).catch(() => {});
+      Sama.store.del(Sama.authKey);
+      location.reload();
+    });
+
+    async function load() { me = await Sama.api('/api/patient/me'); render(); }
+
+    function show() {
+      $('#authView').classList.add('hidden');
+      $('#appView').classList.remove('hidden');
+      render();
+      const tab = (location.hash || '#rdv').slice(1);
+      selectTab(['rdv', 'card', 'dossier', 'profile'].includes(tab) ? tab : 'rdv');
+      Sama.live({ update: () => load().catch(() => {}) });
+    }
+
+    // ---------------- Onglets ----------------
+    function selectTab(name) {
+      $$('#tabs .tab').forEach((t) => t.classList.toggle('on', t.dataset.tab === name));
+      $$('[data-panel]').forEach((p) => p.classList.toggle('hidden', p.dataset.panel !== name));
+      history.replaceState(null, '', '#' + name);
+    }
+    $('#tabs').addEventListener('click', (e) => { const b = e.target.closest('[data-tab]'); if (b) selectTab(b.dataset.tab); });
+
+    function render() {
+      if (!me) return;
+      $('#who').textContent = me.firstName;
+      renderRdv(); renderCard(); renderDossier(); renderProfile();
+    }
+
+    // ---------------- Rendez-vous ----------------
+    function renderRdv() {
+      const now = Sama.isoDay();
+      const upcoming = me.appointments.filter((a) => ['pending_payment', 'confirmed', 'checked_in'].includes(a.status) && a.date >= now).reverse();
+      const past = me.appointments.filter((a) => !upcoming.includes(a)).slice(0, 10);
+      const item = (a) => `
+        <div class="rdv ${a.status}">
+          <div class="rdv-date"><b>${new Date(a.date + 'T12:00').getDate()}</b><span>${Sama.date(a.date, { month: 'short' })}</span></div>
+          <div class="rdv-body">
+            <div><b>${Sama.esc(a.serviceName)}</b> · ${a.time}</div>
+            <div class="small muted">${Sama.date(a.date)} · ${Sama.esc(a.room)}${a.motif ? ' · ' + Sama.esc(a.motif) : ''}</div>
+            <div style="margin-top:4px">${pill(STATUS[a.status] || [a.status, 'grey'])} ${a.payment ? pill(PAY[a.payment.status] || [a.payment.status, 'grey']) : ''}
+              ${a.payment && a.payment.amount ? `<span class="small muted">${Sama.fcfa(a.payment.amount)} · ${Sama.esc(a.payment.methodName || '')}</span>` : ''}</div>
+            <div class="rdv-actions">
+              ${a.canCheckin ? `<button class="btn green sm" data-checkin="${a.id}">📍 Je suis arrivé(e)</button>` : ''}
+              ${a.status === 'checked_in' && a.ticketToken ? `<a class="btn sm" href="/t/${a.ticketToken}">Suivre mon tour →</a>` : ''}
+              ${a.status === 'pending_payment' && a.payment ? `<button class="btn amber sm" data-repay="${a.payment.id}">Finaliser le paiement</button>` : ''}
+              ${a.canCancel ? `<button class="btn link sm" data-cancel="${a.id}">Annuler</button>` : ''}
+            </div>
+          </div>
+        </div>`;
+      $('#rdvList').innerHTML = `
+        <div class="card"><h2>Mes prochains rendez-vous</h2>${upcoming.length ? upcoming.map(item).join('') : '<p class="muted">Aucun rendez-vous à venir.</p>'}
+        ${upcoming.some((a) => a.status === 'confirmed' && a.date === now) ? '<p class="small muted" style="margin:8px 0 0">Le jour J, touchez « Je suis arrivé(e) » à votre arrivée : vous passez en priorité à l\'heure de votre rendez-vous.</p>' : ''}</div>
+        ${past.length ? `<details class="card"><summary><b>Historique</b> (${past.length})</summary>${past.map(item).join('')}</details>` : ''}`;
+    }
+
+    $('#rdvList').addEventListener('click', async (e) => {
+      const c = e.target.closest('[data-checkin]'), x = e.target.closest('[data-cancel]'), r = e.target.closest('[data-repay]');
+      try {
+        if (c) {
+          const t = await Sama.api(`/api/patient/appointments/${c.dataset.checkin}/checkin`, { method: 'POST' });
+          Sama.store.set('samatour-ticket', { token: t.token, number: t.number, day: new Date().toDateString() });
+          location.href = '/t/' + t.token;
+        }
+        if (x && confirm('Annuler ce rendez-vous ? Si vous avez payé, vous serez remboursé.')) {
+          await Sama.api(`/api/patient/appointments/${x.dataset.cancel}/cancel`, { method: 'POST' });
+          await load();
+        }
+        if (r) {
+          const a = me.appointments.find((y) => y.payment && y.payment.id === r.dataset.repay);
+          openPayModal(a);
+        }
+      } catch (err) { alert(err.message); }
+    });
+
+    // ---------------- Prise de rendez-vous ----------------
+    $('#newRdvBtn').addEventListener('click', async () => {
+      rdvServices = await Sama.api('/api/rdv/services');
+      Object.assign(B, { step: 1, service: null, date: null, time: null, method: null });
+      $('#booking').classList.remove('hidden');
+      $('#newRdvBtn').classList.add('hidden');
+      $('#bSearch').value = '';
+      renderBooking();
+      $('#bSearch').focus();
+    });
+    $('#bCancel').addEventListener('click', closeBooking);
+    $('#bBack').addEventListener('click', () => { if (B.step > 1) { B.step--; renderBooking(); } else closeBooking(); });
+    function closeBooking() { $('#booking').classList.add('hidden'); $('#newRdvBtn').classList.remove('hidden'); }
+
+    const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    $('#bSearch').addEventListener('input', renderBooking);
+
+    function renderBooking() {
+      $$('#steps span').forEach((s, i) => s.classList.toggle('on', i + 1 <= B.step));
+      $$('[data-step]').forEach((d) => d.classList.toggle('hidden', Number(d.dataset.step) !== B.step));
+      $('#bError').classList.add('hidden');
+      if (B.step === 1) {
+        const q = norm($('#bSearch').value.trim());
+        const list = rdvServices.filter((s) => !q || norm([s.name, s.category, s.keywords].join(' ')).includes(q));
+        const cats = [...new Set(list.map((s) => s.category))];
+        $('#bServices').innerHTML = list.length ? cats.map((c) => `<div class="group-title">${Sama.esc(c)}</div>` +
+          list.filter((s) => s.category === c).map((s) => `
+            <button type="button" class="choice" data-sid="${s.id}"><span><span class="title">${Sama.esc(s.name)}</span><br><span class="meta">${Sama.esc(s.room)}</span></span>
+            <span class="pill ${s.price ? '' : 'green'}">${Sama.fcfa(s.price)}</span></button>`).join('')).join('')
+          : '<p class="muted">Aucun service trouvé.</p>';
+      }
+      if (B.step === 2) {
+        $('#bPicked').innerHTML = `<b>${Sama.esc(B.service.name)}</b> · ${Sama.fcfa(B.service.price)}`;
+        const days = [];
+        for (let i = 0; days.length < 14 && i < 30; i++) {
+          const d = Sama.isoDay(i);
+          if (meta.rdv.days.includes(new Date(d + 'T12:00').getDay())) days.push(d);
+        }
+        if (!B.date) B.date = days[0];
+        $('#bDays').innerHTML = days.map((d) => `<button type="button" class="day ${d === B.date ? 'on' : ''}" data-day="${d}">
+          <span>${Sama.date(d, { weekday: 'short' })}</span><b>${new Date(d + 'T12:00').getDate()}</b><span>${Sama.date(d, { month: 'short' })}</span></button>`).join('');
+        loadSlots();
+      }
+      if (B.step === 3) {
+        $('#bSummary').innerHTML = `<div><b>${Sama.esc(B.service.name)}</b></div><div>${Sama.date(B.date)} à <b>${B.time}</b></div>
+          <div class="small muted">${Sama.esc(B.service.room)}</div><div class="total">${Sama.fcfa(B.service.price)}</div>`;
+        const free = !B.service.price;
+        const methods = free ? {} : meta.methods;
+        if (free) B.method = 'sur_place';
+        $('#bMethods').innerHTML = free ? '<p class="banner green small" style="margin:0">Ce service est gratuit : aucun paiement.</p>' :
+          Object.entries(methods).map(([k, v]) => `<button type="button" class="pay-method ${k} ${B.method === k ? 'on' : ''}" data-method="${k}">${Sama.esc(v)}</button>`).join('');
+        $('#bPayPhoneBox').classList.toggle('hidden', free || !['wave', 'orange_money', 'free_money'].includes(B.method));
+        if (!$('#bPayPhone').value) $('#bPayPhone').value = me.phone.replace('+221', '');
+        $('#bPay').textContent = free ? 'Confirmer le rendez-vous' : B.method === 'sur_place' ? 'Réserver (paiement sur place)' : B.method ? `Payer ${Sama.fcfa(B.service.price)}` : 'Choisissez un moyen de paiement';
+        $('#bPay').disabled = !free && !B.method;
+      }
+    }
+
+    async function loadSlots() {
+      $('#bSlots').innerHTML = '<p class="muted small">Chargement…</p>';
+      const r = await Sama.api(`/api/rdv/slots?service=${B.service.id}&date=${B.date}`);
+      $('#bSlots').innerHTML = r.slots.length ? r.slots.map((s) => `<button type="button" class="slot" data-time="${s.time}" ${s.available ? '' : 'disabled'}>${s.time}</button>`).join('')
+        : '<p class="muted small">Aucun créneau ce jour-là. Essayez une autre date.</p>';
+    }
+
+    $('#booking').addEventListener('click', async (e) => {
+      const s = e.target.closest('[data-sid]'), d = e.target.closest('[data-day]'), t = e.target.closest('[data-time]'), m = e.target.closest('[data-method]');
+      if (s) { B.service = rdvServices.find((x) => x.id === s.dataset.sid); B.step = 2; B.date = null; renderBooking(); }
+      if (d) { B.date = d.dataset.day; renderBooking(); }
+      if (t && !t.disabled) { B.time = t.dataset.time; B.step = 3; renderBooking(); }
+      if (m) { B.method = m.dataset.method; renderBooking(); }
+    });
+
+    $('#bPay').addEventListener('click', async () => {
+      $('#bPay').disabled = true;
+      try {
+        const r = await Sama.api('/api/patient/appointments', { method: 'POST', body: {
+          serviceId: B.service.id, date: B.date, time: B.time, motif: $('#bMotif').value, method: B.method, payPhone: $('#bPayPhone').value,
+        } });
+        if (r.redirectUrl) { location.href = r.redirectUrl; return; }
+        closeBooking();
+        await load();
+        const a = me.appointments.find((x) => x.id === r.appointment.id) || r.appointment;
+        if (a.status === 'pending_payment') openPayModal(a);
+        else showConfirmed(a);
+      } catch (err) {
+        $('#bError').textContent = err.message; $('#bError').classList.remove('hidden');
+        if (err.status === 409) { B.step = 2; renderBooking(); }
+      } finally { $('#bPay').disabled = false; }
+    });
+
+    // Simulation de la validation mobile money / carte
+    function openPayModal(a) {
+      const p = a.payment;
+      const mm = ['wave', 'orange_money', 'free_money'].includes(p.method);
+      $('#payBox').innerHTML = `
+        <div class="pay-head ${p.method}">${Sama.esc(p.methodName)}</div>
+        <div class="total" style="text-align:center;margin:12px 0">${Sama.fcfa(p.amount)}</div>
+        <p style="text-align:center">${mm ? `Une demande de paiement a été envoyée sur votre téléphone.<br><b>Validez-la avec votre code ${Sama.esc(p.methodName)}.</b>`
+          : 'Vous allez être redirigé vers la page de paiement sécurisée de la banque.'}</p>
+        <p class="small muted" style="text-align:center">Référence ${Sama.esc(p.ref || '')} · le créneau est réservé 15 minutes.</p>
+        ${meta.paymentMode === 'simulation' ? '<p class="banner info small">Démonstration : le paiement est simulé, aucun argent ne circule.</p>' : ''}
+        <button class="btn big block green" id="payOk">${mm ? 'J\'ai validé sur mon téléphone' : 'Payer'}</button>
+        <button class="btn link block" id="payLater">Plus tard</button>`;
+      $('#payModal').classList.remove('hidden');
+      $('#payLater').onclick = () => $('#payModal').classList.add('hidden');
+      $('#payOk').onclick = async () => {
+        try {
+          const done = meta.paymentMode === 'simulation'
+            ? await Sama.api(`/api/patient/payments/${p.id}/confirm`, { method: 'POST' })
+            : await Sama.api(`/api/patient/payments/${p.id}/refresh`, { method: 'POST' });
+          await load();
+          if (done.status === 'confirmed') showConfirmed(done);
+          else alert('Paiement pas encore reçu. Réessayez dans un instant.');
+        } catch (err) { alert(err.message); $('#payModal').classList.add('hidden'); await load(); }
+      };
+    }
+
+    function showConfirmed(a) {
+      $('#payBox').innerHTML = `
+        <div style="text-align:center;font-size:2.6rem">✅</div>
+        <h2 style="text-align:center">Rendez-vous confirmé</h2>
+        <p style="text-align:center;margin:0"><b>${Sama.esc(a.serviceName)}</b><br>${Sama.date(a.date)} à <b>${a.time}</b><br><span class="muted">${Sama.esc(a.room)}</span></p>
+        ${a.payment && a.payment.status === 'paid' ? `<p class="banner green small" style="margin-top:12px">Paiement reçu : ${Sama.fcfa(a.payment.amount)} · ${Sama.esc(a.payment.methodName)} · réf. ${Sama.esc(a.payment.ref || '')}</p>` : ''}
+        ${a.payment && a.payment.status === 'on_site' ? `<p class="banner amber small" style="margin-top:12px">À régler à la caisse le jour du rendez-vous : ${Sama.fcfa(a.payment.amount)}</p>` : ''}
+        <p class="small muted" style="text-align:center">Un SMS de confirmation vous a été envoyé. Le jour J, touchez « Je suis arrivé(e) » à votre arrivée.</p>
+        <button class="btn block" id="payClose">Fermer</button>`;
+      $('#payModal').classList.remove('hidden');
+      $('#payClose').onclick = () => $('#payModal').classList.add('hidden');
+    }
+
+    // ---------------- Carte de santé ----------------
+    function renderCard() {
+      const d = me.dossier;
+      $('#healthCard').innerHTML = `
+        <div class="hc-top"><img src="/logo/samatour-symbole-blanc.svg" alt=""><div><b>SAMA TOUR</b><span>Carte de santé numérique</span></div></div>
+        <div class="hc-main">
+          <div>
+            <div class="hc-name">${Sama.esc(me.firstName)} ${Sama.esc(me.lastName.toUpperCase())}</div>
+            <div class="hc-line">${me.birthDate ? 'Né(e) le ' + new Date(me.birthDate + 'T12:00').toLocaleDateString('fr-FR') + (me.age != null ? ` (${me.age} ans)` : '') : ''} ${me.sex ? '· ' + (me.sex === 'F' ? 'Femme' : 'Homme') : ''}</div>
+            <div class="hc-grid">
+              <div><span>Groupe sanguin</span><b>${Sama.esc(d.bloodGroup || '—')}</b></div>
+              <div><span>N° de carte</span><b>${Sama.esc(me.cardNumber)}</b></div>
+            </div>
+            <div class="hc-alert">${d.allergies.length ? '⚠ Allergies : ' + d.allergies.map(Sama.esc).join(', ') : 'Aucune allergie connue'}</div>
+            ${me.emergencyContact && me.emergencyContact.name ? `<div class="hc-line">Urgence : ${Sama.esc(me.emergencyContact.name)} · ${Sama.esc(me.emergencyContact.phone)}</div>` : ''}
+          </div>
+          <div class="qr" id="cardQr"></div>
+        </div>`;
+      Sama.qr($('#cardQr'), me.cardUrl, 110);
+      $('#shareCode').textContent = me.shareCode;
+    }
+    $('#newCode').addEventListener('click', async () => {
+      if (!confirm('Créer un nouveau code ? Les soignants qui ont votre ancien code perdront l\'accès à votre dossier.')) return;
+      me = await Sama.api('/api/patient/share-code', { method: 'POST' });
+      render();
+    });
+
+    // ---------------- Dossier ----------------
+    function renderDossier() {
+      const d = me.dossier;
+      const tags = (xs, cls = '') => xs.length ? xs.map((x) => `<span class="tag ${cls}">${Sama.esc(x)}</span>`).join(' ') : '<span class="muted">—</span>';
+      $('#dossier').innerHTML = `
+        <div class="card">
+          <h2>Informations médicales</h2>
+          <p class="small muted" style="margin-top:0">Renseignées par vos soignants. Signalez-leur toute erreur.</p>
+          <div class="kv"><span>Groupe sanguin</span><b>${Sama.esc(d.bloodGroup || '—')}</b></div>
+          <div class="kv"><span>Allergies</span><div>${tags(d.allergies, 'red')}</div></div>
+          <div class="kv"><span>Antécédents</span><div>${tags(d.conditions)}</div></div>
+          <div class="kv"><span>Traitements en cours</span><div>${tags(d.treatments)}</div></div>
+        </div>
+        <div class="card">
+          <h2>Consultations et ordonnances</h2>
+          ${d.consultations.length ? d.consultations.map((c) => `
+            <details class="consult">
+              <summary><b>${new Date(c.at).toLocaleDateString('fr-FR')}</b> · ${Sama.esc(c.motif)} <span class="muted small">· ${Sama.esc(c.doctor)}</span></summary>
+              ${c.diagnostic ? `<p><b>Diagnostic :</b> ${Sama.esc(c.diagnostic)}</p>` : ''}
+              ${c.vitals && (c.vitals.tension || c.vitals.temperature || c.vitals.poids) ? `<p class="small">Tension ${Sama.esc(c.vitals.tension || '—')} · Température ${Sama.esc(c.vitals.temperature || '—')} °C · Poids ${Sama.esc(c.vitals.poids || '—')} kg</p>` : ''}
+              ${c.notes ? `<p class="small">${Sama.esc(c.notes)}</p>` : ''}
+              ${c.prescription.length ? `<div class="ordonnance"><b>Ordonnance</b><ul>${c.prescription.map((l) => `<li><b>${Sama.esc(l.med)}</b> : ${Sama.esc(l.posologie)}${l.duree ? ', ' + Sama.esc(l.duree) : ''}</li>`).join('')}</ul></div>` : ''}
+            </details>`).join('') : '<p class="muted">Aucune consultation enregistrée.</p>'}
+        </div>
+        <div class="card">
+          <h2>Vaccinations</h2>
+          ${d.vaccinations.length ? d.vaccinations.map((v) => `<div class="kv"><span>${new Date(v.date + 'T12:00').toLocaleDateString('fr-FR')}</span><div><b>${Sama.esc(v.name)}</b> <span class="small muted">${v.lot ? 'lot ' + Sama.esc(v.lot) + ' · ' : ''}${Sama.esc(v.by || '')}</span></div></div>`).join('') : '<p class="muted">Aucune vaccination enregistrée.</p>'}
+        </div>
+        <div class="card">
+          <h2>Qui a consulté mon dossier ?</h2>
+          <p class="small muted" style="margin-top:0">Chaque accès d'un soignant est enregistré ici.</p>
+          ${d.accessLog.length ? d.accessLog.slice(0, 30).map((l) => `<div class="kv"><span>${new Date(l.at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</span><div>${Sama.esc(l.who)} · ${Sama.esc(l.action)}${l.reason ? ` <span class="small muted">(${Sama.esc(l.reason)})</span>` : ''}</div></div>`).join('') : '<p class="muted">Personne n\'a encore consulté votre dossier.</p>'}
+        </div>`;
+    }
+
+    // ---------------- Profil ----------------
+    function renderProfile() {
+      if (document.activeElement && document.activeElement.closest && document.activeElement.closest('#profileForm')) return;
+      $('#pFirst').value = me.firstName; $('#pLast').value = me.lastName; $('#pBirth').value = me.birthDate || '';
+      $('#pSex').value = me.sex || ''; $('#pAddress').value = me.address || '';
+      $('#pEmName').value = (me.emergencyContact || {}).name || ''; $('#pEmPhone').value = (me.emergencyContact || {}).phone || '';
+    }
+    $('#profileForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      me = await Sama.api('/api/patient/me', { method: 'POST', body: {
+        firstName: $('#pFirst').value, lastName: $('#pLast').value, birthDate: $('#pBirth').value, sex: $('#pSex').value,
+        address: $('#pAddress').value, emergencyContact: { name: $('#pEmName').value, phone: $('#pEmPhone').value },
+      } });
+      $('#profileSaved').textContent = ' ✓ Enregistré';
+      setTimeout(() => ($('#profileSaved').textContent = ''), 2500);
+      render();
+    });
+
+    init();
+  })();
+  </script>
+</body>
+</html>

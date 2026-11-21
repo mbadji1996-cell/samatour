@@ -8,16 +8,22 @@
   <link rel="icon" href="/icon.svg">
   <link rel="apple-touch-icon" href="/logo/png/samatour-symbole-192.png">
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="stylesheet" href="/style.css?v=5">
+  <link rel="stylesheet" href="/style.css?v=6">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="/"><img src="/logo/samatour-symbole-blanc.svg" alt=""><div><b>SAMA <em>TOUR</em></b><span>Votre tour, sans attendre au couloir</span></div></a>
-    <div class="right" id="facility"></div>
+    <div class="right"><span id="facility"></span><br><a href="/patient" class="small" style="color:#fff">Mon espace santé →</a></div>
   </header>
 
   <main class="wrap">
     <div id="existing" class="banner info hidden"></div>
+
+    <a class="card portal-cta" href="/patient">
+      <span style="font-size:1.6rem">📅</span>
+      <span><b>Prendre rendez-vous et payer en ligne</b><br><span class="small muted">Mon espace santé : rendez-vous, carte de santé numérique, dossier</span></span>
+      <span class="pill">→</span>
+    </a>
 
     <form id="form" class="card" novalidate>
       <h2>1. Choisissez le service</h2>
@@ -57,12 +63,12 @@
     </form>
 
     <img class="logo-full" src="/logo/samatour-logo.svg" alt="SAMA TOUR" style="max-width:200px;opacity:0.9;margin-top:22px">
-    <p class="footer-note" style="margin-top:8px">
+    <p class="footer-note" style="margin-top:8px"><a href="/pro">Espace soignants</a> · <a href="/admin">Administration</a> · <a href="/ecran">Écran de salle</a><br>
       Nous ne demandons aucune information médicale. Votre prénom et votre numéro servent uniquement à vous prévenir de votre tour.
     </p>
   </main>
 
-  <script src="/app.js?v=4"></script>
+  <script src="/app.js?v=6"></script>
   <script>
   (function () {
     'use strict';

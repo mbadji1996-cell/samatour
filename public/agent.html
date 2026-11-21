@@ -7,7 +7,7 @@
   <title>SAMA TOUR · Console agent</title>
   <link rel="icon" href="/icon.svg">
   <link rel="apple-touch-icon" href="/logo/png/samatour-symbole-192.png">
-  <link rel="stylesheet" href="/style.css?v=5">
+  <link rel="stylesheet" href="/style.css?v=6">
   <style>
     .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
     .tab { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; cursor: pointer; font: inherit; font-weight: 600; color: var(--ink); }
@@ -217,7 +217,7 @@
   </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="/app.js?v=4"></script>
+  <script src="/app.js?v=6"></script>
   <script>
   (function () {
     'use strict';
@@ -226,6 +226,7 @@
     let sid = Sama.store.get('samatour-agent-service');
     let view = 'queue';
     let es = null;
+    Sama.authKey = 'samatour-staff-token';
 
     // ---- Connexion ----
     $('#loginForm').addEventListener('submit', async (e) => {
@@ -239,20 +240,24 @@
         $('#loginError').classList.remove('hidden');
       }
     });
-    $('#logout').addEventListener('click', (e) => { e.preventDefault(); Sama.setPin(''); location.reload(); });
+    $('#logout').addEventListener('click', (e) => { e.preventDefault(); Sama.setPin(''); location.href = Sama.store.get(Sama.authKey) ? '/pro' : '/agent'; });
 
     async function start() {
       $('#loginView').classList.add('hidden');
       $('#appView').classList.remove('hidden');
       await load();
       if (!es) es = Sama.live({ update: load });
+      // Lien direct vers un onglet : /agent#services ou /agent#stats
+      const h = location.hash.slice(1);
+      const v = document.querySelector(`#views [data-view="${h === 'services' ? 'catalog' : h}"]`);
+      if (v) v.click();
     }
 
     async function load() {
       try {
         state = await Sama.api('/api/agent/state');
       } catch (e) {
-        if (e.status === 401) { Sama.setPin(''); location.reload(); }
+        if (e.status === 401) { Sama.setPin(''); Sama.store.del(Sama.authKey); location.reload(); }
         return;
       }
       if (!state.services.some((s) => s.id === sid)) sid = state.services[0] && state.services[0].id;
@@ -559,7 +564,8 @@
 
     setInterval(render, 30000); // met à jour les durées d'attente affichées
 
-    if (Sama.getPin()) start();
+    // Un membre du personnel connecté à son espace (/pro) n'a pas besoin du PIN.
+    if (Sama.getPin() || Sama.store.get(Sama.authKey)) start();
   })();
   </script>
 </body>

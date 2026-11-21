@@ -56,6 +56,11 @@ function cleanService(s) {
     keywords: String(s.keywords || '').trim().slice(0, 200),
     level: level >= 1 && level <= 4 ? level : null, // null = service ajouté par la structure
     active: s.active !== false,
+    // Réglages des rendez-vous (null = valeur par défaut calculée dans lib/portals.js)
+    rdvEnabled: typeof s.rdvEnabled === 'boolean' ? s.rdvEnabled : null,
+    price: Number.isFinite(Number(s.price)) && s.price !== null && s.price !== '' ? Math.max(0, Math.round(Number(s.price))) : null,
+    slotMinutes: Number(s.slotMinutes) > 0 ? Math.round(Number(s.slotMinutes)) : null,
+    rdvCapacity: Number(s.rdvCapacity) > 0 ? Math.round(Number(s.rdvCapacity)) : null,
   };
 }
 
@@ -179,7 +184,10 @@ function ensureDay() {
   if (db.day === today()) return;
   archiveDay();
   db = freshDb();
-  if (DEMO_MODE) seedDemo();
+  if (DEMO_MODE) {
+    seedDemo();
+    if (portals) portals.refreshDemoDay();
+  }
   save();
 }
 
@@ -187,11 +195,23 @@ function ensureDay() {
 // Logique de file d'attente
 // ---------------------------------------------------------------------------
 
-/** File d'un service : prioritaires d'abord, puis ordre d'arrivée. */
+/**
+ * File d'un service : prioritaires médicaux d'abord, puis les patients avec rendez-vous dont l'heure
+ * est arrivée (à 10 min près), puis les autres par ordre d'arrivée.
+ */
+function queueRank(t, now) {
+  if (t.priority) return [0, t.createdAt];
+  if (t.rdv && t.rdv.at <= now + 10 * MIN) return [1, t.rdv.at];
+  return [2, t.createdAt];
+}
 function waitingQueue(sid) {
+  const now = Date.now();
   return db.tickets
     .filter((t) => t.serviceId === sid && t.status === 'waiting')
-    .sort((a, b) => b.priority - a.priority || a.createdAt - b.createdAt);
+    .sort((a, b) => {
+      const [ra, ka] = queueRank(a, now), [rb, kb] = queueRank(b, now);
+      return ra - rb || ka - kb;
+    });
 }
 
 function currentTicket(sid) {
@@ -270,6 +290,7 @@ function publicTicket(t) {
     calledAt: t.calledAt,
     doneAt: t.doneAt,
     rating: t.rating,
+    rdvTime: t.rdv ? t.rdv.time : null,
   };
   if (t.status === 'waiting') {
     Object.assign(out, positionInfo(t));
@@ -287,7 +308,7 @@ function newToken() {
   return crypto.randomBytes(9).toString('base64url');
 }
 
-function createTicket({ serviceId, name, phone, travelMin, onSite, priority, source, createdAt }) {
+function createTicket({ serviceId, name, phone, travelMin, onSite, priority, source, createdAt, rdv }) {
   if (!svc(serviceId).active) throw new HttpError(400, 'Ce service n’est pas disponible aujourd’hui');
   db.counters[serviceId] = (db.counters[serviceId] || 0) + 1;
   const t = {
@@ -306,6 +327,7 @@ function createTicket({ serviceId, name, phone, travelMin, onSite, priority, sou
     doneAt: null,
     rating: null,
     notified: { approach: false, leave: false },
+    rdv: rdv || null, // { appointmentId, time, at } si le patient vient sur rendez-vous
   };
   db.tickets.push(t);
   // Pas de SMS "votre tour approche" si le patient est déjà parmi les premiers à son arrivée.
@@ -354,6 +376,7 @@ function callNext(sid, outcome = 'done', { silent = false, at = Date.now() } = {
   if (cur) {
     cur.status = outcome === 'absent' ? 'absent' : 'done';
     cur.doneAt = at;
+    if (portals) portals.onTicketDone(cur);
   }
   const next = waitingQueue(sid)[0];
   if (next) {
@@ -813,6 +836,15 @@ route('GET', '/api/agent/export.csv', ({ res }) => {
   return undefined;
 });
 
+// --- Espaces patient, soignant et administration (lib/portals.js) -----------
+
+const store = require('./lib/store');
+const portals = require('./lib/portals')({
+  route, HttpError, svc, config, sms, DEMO_MODE, today, joinUrl, broadcast, changed, createTicket,
+  getServices: () => services,
+  saveServices,
+});
+
 // --- Fichiers statiques -----------------------------------------------------
 
 const MIME = {
@@ -826,7 +858,10 @@ const MIME = {
   '.ico': 'image/x-icon',
 };
 
-const PAGES = { '/': 'index.html', '/agent': 'agent.html', '/ecran': 'ecran.html' };
+const PAGES = {
+  '/': 'index.html', '/agent': 'agent.html', '/ecran': 'ecran.html',
+  '/patient': 'patient.html', '/pro': 'pro.html', '/admin': 'admin.html',
+};
 
 function serveStatic(pathname, res) {
   let file = PAGES[pathname];
@@ -869,7 +904,7 @@ const server = http.createServer(async (req, res) => {
         if (r.method !== req.method) continue;
         const m = r.re.exec(pathname);
         if (!m) continue;
-        if (r.agent && !pinOk(req.headers['x-pin'] || url.searchParams.get('pin'))) {
+        if (r.agent && !pinOk(req.headers['x-pin'] || url.searchParams.get('pin')) && !(portals && portals.staffFromReq(req))) {
           throw new HttpError(401, 'Code PIN requis');
         }
         const params = Object.fromEntries(r.keys.map((k, i) => [k, m[i + 1]]));
@@ -890,8 +925,10 @@ const server = http.createServer(async (req, res) => {
   }
 });
 
-if (DEMO_MODE && !db.tickets.length) {
-  seedDemo();
+if (DEMO_MODE) {
+  if (!db.tickets.length) seedDemo();
+  portals.seedDemo();
+  portals.refreshDemoDay();
   saveNow();
 }
 
@@ -909,6 +946,7 @@ server.listen(PORT, '0.0.0.0', () => {
 function shutdown() {
   try {
     saveNow();
+    store.saveNow();
   } finally {
     process.exit(0);
   }
