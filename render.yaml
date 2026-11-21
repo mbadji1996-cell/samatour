@@ -5,7 +5,7 @@ services:
     runtime: node
     plan: free
     region: frankfurt
-    buildCommand: "echo 'Aucune dépendance à installer'"
+    buildCommand: npm install --omit=dev
     startCommand: node server.js
     healthCheckPath: /api/public
     envVars:
@@ -13,3 +13,7 @@ services:
         value: "1"
       - key: NODE_VERSION
         value: "20"
+      # Clé de l'API Claude pour l'assistant IA (à saisir dans le tableau de bord Render, jamais dans le code).
+      # Sans clé, l'assistant fonctionne en mode de base.
+      - key: ANTHROPIC_API_KEY
+        sync: false

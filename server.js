@@ -840,7 +840,7 @@ route('GET', '/api/agent/export.csv', ({ res }) => {
 
 const store = require('./lib/store');
 const portals = require('./lib/portals')({
-  route, HttpError, svc, config, sms, DEMO_MODE, today, joinUrl, broadcast, changed, createTicket,
+  route, HttpError, svc, config, sms, DEMO_MODE, today, joinUrl, broadcast, changed, createTicket, serviceSummary,
   getServices: () => services,
   saveServices,
 });
@@ -968,7 +968,8 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`  Console agent / médecin     : ${base}/agent   (PIN : ${PIN === '1234' ? '1234' : '••••'})`);
   console.log(`  Écran salle d’attente       : ${base}/ecran`);
   console.log(`  Sur ce PC                   : http://localhost:${PORT}/`);
-  console.log(`  SMS                         : mode ${sms.mode}\n`);
+  console.log(`  SMS                         : mode ${sms.mode}`);
+  console.log(`  Assistant                   : mode ${require('./lib/assistant').mode}\n`);
 });
 
 function shutdown() {

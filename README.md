@@ -37,7 +37,15 @@ Sama Tour accompagne le patient avant, pendant et après la consultation :
 - Le jour J, le patient touche « Je suis arrivé(e) » (ou l'accueil le fait pour lui). Il entre dans la file **à l'heure de son rendez-vous**, avant les patients sans rendez-vous, mais après les urgences et les patients prioritaires.
 - **Paiement simulé par défaut** : aucun argent ne circule. Pour encaisser réellement, définir `WAVE_API_KEY` (API Checkout de Wave, voir `lib/payment.js`). Cette intégration est écrite mais **pas encore testée avec un compte marchand**.
 
-### Carte de santé et dossier patient
+### Assistant conversationnel (IA)
+- Bouton **« Assistant »** sur la page d'accueil, l'espace patient et la page du ticket.
+- Il oriente vers le bon service à partir de mots simples (« j'ai mal aux dents », « vaccin pour mon bébé »). Il donne l'attente et le tarif **réels** du moment, et explique le rendez-vous, le paiement, l'annulation et la carte de santé. Si le patient est connecté, il connaît ses rendez-vous.
+- **Garde-fous :** jamais de diagnostic ni de médicament ; un signe de gravité renvoie immédiatement vers le **SAMU (1515)** et les urgences ; aucune donnée de santé n'est demandée dans la conversation ; 20 messages au plus par tranche de 10 minutes et par appareil.
+- **Deux modes :**
+  - **Claude** (IA d'Anthropic, modèle `claude-opus-5-5`, effort faible pour répondre vite) quand la variable `ANTHROPIC_API_KEY` est définie. Sur Render : *Environment*, puis `ANTHROPIC_API_KEY`, puis *Save* ; le service redémarre. Le texte des questions et les données de services sont alors envoyés à l'API d'Anthropic.
+  - **De base**, sans clé : un moteur de règles sur les mêmes données. C'est aussi le repli automatique en cas d'incident de l'API.
+
+
 - Chaque compte reçoit une **carte numérotée** (`ST-2026-000001`) avec QR code, groupe sanguin, allergies et personne à prévenir. La carte s'imprime au format carte bancaire.
 - **Accès protégé au dossier** : un soignant ne l'ouvre que si le patient a rendez-vous dans son service, s'il lui donne son **code de partage** à 6 chiffres, ou par un **accès d'urgence motivé**.
 - **Chaque accès est tracé** dans un journal que le patient consulte dans son espace. L'administration et l'accueil n'ont **pas** accès au contenu médical.
@@ -71,7 +79,7 @@ Sama Tour accompagne le patient avant, pendant et après la consultation :
 
 ## Lancer l'application
 
-Prérequis : [Node.js](https://nodejs.org) version 18 ou plus récente. **Aucune autre installation** (`npm install` n'est pas nécessaire).
+Prérequis : [Node.js](https://nodejs.org) version 18 ou plus récente. `npm install` installe le SDK d'Anthropic pour l'assistant IA. Sans lui, tout fonctionne, et l'assistant passe en mode de base.
 
 Sous Windows, double-cliquez sur **`demarrer.bat`**, ou bien :
 
@@ -130,6 +138,7 @@ samatour/
 ├── lib/store.js       Stockage durable : comptes, dossiers, rendez-vous, paiements, sessions
 ├── lib/payment.js     Paiement (simulation, ou Wave)
 ├── lib/portals.js     API des espaces patient, soignants et administration
+├── lib/assistant.js   Assistant conversationnel (Claude, ou mode de base sans clé)
 ├── public/            Pages web (application installable sur téléphone : PWA)
 │   ├── index.html     Prise de ticket
 │   ├── ticket.html    Suivi du ticket
