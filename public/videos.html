@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2b3fbf">
+  <title>SAMA TOUR · Démo et pitch</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/style.css?v=6">
+  <link rel="stylesheet" href="/portal.css?v=3">
+  <style>
+    video { width: 100%; border-radius: 12px; background: #0f1a4a; display: block; }
+    .links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><img src="/logo/samatour-symbole-blanc.svg" alt=""><div><b>SAMA <em>TOUR</em></b><span>PAS Challenge 2026 · Équipe XEL SANTE</span></div></a>
+    <div class="right"><a href="/" class="small">Ouvrir l'application →</a></div>
+  </header>
+  <main class="wrap wide" style="max-width:980px">
+    <div class="card" id="demo">
+      <h2>Démonstration de l'application (1 min 46)</h2>
+      <p class="small muted" style="margin-top:0">Enregistrée sur l'application en ligne : rendez-vous et paiement, carte de santé, dossier patient, espace soignant, écran de salle, administration.</p>
+      <video controls preload="metadata" poster="/media/demo-poster.jpg" src="/media/SamaTour_Demo.mp4"></video>
+      <div class="links"><a class="btn ghost sm" href="/media/SamaTour_Demo.mp4" download>Télécharger la vidéo</a><a class="btn ghost sm" href="/">Essayer l'application</a></div>
+    </div>
+    <div class="card" id="pitch">
+      <h2>Pitch</h2>
+      <p class="small muted" style="margin-top:0">Le projet en 10 diapositives : problème, solution, parcours patient, produit, résultats, modèle économique, feuille de route et demande.</p>
+      <video controls preload="metadata" poster="/media/pitch-poster.jpg" src="/media/SamaTour_Pitch.mp4"></video>
+      <div class="links"><a class="btn ghost sm" href="/media/SamaTour_Pitch.mp4" download>Télécharger la vidéo</a><a class="btn ghost sm" href="/media/SamaTour_Pitch_deck.pdf">Diapositives (PDF)</a></div>
+    </div>
+    <div class="banner info small">
+      <b>Comptes de démonstration</b> pour tester l'application :
+      patient <code>77 000 00 01</code> / <code>1234</code> ·
+      médecin <code>dr.sow</code> / <code>demo-sante</code> ·
+      administration <code>admin</code> / <code>demo-admin</code>.
+      Les paiements sont simulés.
+    </div>
+  </main>
+</body>
+</html>

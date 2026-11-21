@@ -1,0 +1,168 @@
+1
+00:00:00,500 --> 00:00:05,354
+Sama Tour : le parcours patient, simplement réinventé.
+
+2
+00:00:05,504 --> 00:00:10,742
+Un projet de l'équipe XEL SANTE pour le PAS Challenge 2026.
+
+3
+00:00:11,792 --> 00:00:17,569
+Au Sénégal, se soigner coûte du temps avant de coûter de l'argent.
+
+4
+00:00:17,719 --> 00:00:23,342
+Dès l'aube, les patients font la queue pour « prendre un rang ».
+
+5
+00:00:23,492 --> 00:00:29,346
+Puis ils attendent des heures, sans savoir quand viendra leur tour.
+
+6
+00:00:29,496 --> 00:00:35,504
+Les structures sont saturées et n'ont aucune donnée pour s'organiser.
+
+7
+00:00:35,654 --> 00:00:44,354
+Les plus fragiles en souffrent le plus : malades chroniques, personnes âgées, femmes enceintes, enfants.
+
+8
+00:00:45,404 --> 00:00:52,104
+Sama Tour réunit tout le parcours dans une seule plateforme, en trois espaces.
+
+9
+00:00:52,254 --> 00:00:59,108
+Le patient suit son tour à distance, prend rendez-vous et paie par mobile money.
+
+10
+00:00:59,258 --> 00:01:04,573
+Il garde sa carte de santé et son dossier sur son téléphone.
+
+11
+00:01:04,723 --> 00:01:11,115
+Les soignants ont leur agenda, la file d'attente et le dossier du patient.
+
+12
+00:01:11,265 --> 00:01:19,427
+L'administration gère le personnel, les tarifs et les recettes, sans accès aux données médicales.
+
+13
+00:01:20,477 --> 00:01:26,638
+Prenons Aminah, à Pikine. Elle réserve une consultation de cardiologie.
+
+14
+00:01:26,788 --> 00:01:33,181
+Elle paie 3 000 francs par Orange Money et reçoit la confirmation par SMS.
+
+15
+00:01:33,331 --> 00:01:40,492
+Le jour J, l'application lui dit quand partir, selon son trajet et l'attente réelle.
+
+16
+00:01:40,642 --> 00:01:47,881
+À son arrivée, elle touche « Je suis arrivée » et passe à l'heure de son rendez-vous.
+
+17
+00:01:48,031 --> 00:01:53,885
+Le médecin scanne sa carte : il voit son allergie à la pénicilline.
+
+18
+00:01:54,035 --> 00:01:59,196
+Son ordonnance arrive dans son dossier, sur son téléphone.
+
+19
+00:01:59,346 --> 00:02:06,046
+Et Ali, sans smartphone, prend un ticket papier et reçoit ses alertes par SMS.
+
+20
+00:02:07,096 --> 00:02:12,950
+Tout cela n'est pas une maquette : l'application est déjà en ligne.
+
+21
+00:02:13,100 --> 00:02:19,800
+Espace patient, carte de santé, dossier, agenda des soignants, administration.
+
+22
+00:02:19,950 --> 00:02:26,188
+Le jury peut la tester dès maintenant avec les comptes de démonstration.
+
+23
+00:02:27,238 --> 00:02:30,400
+Elle est pensée pour le Sénégal.
+
+24
+00:02:30,550 --> 00:02:36,173
+Paiement par Wave, Orange Money, Free Money, carte ou sur place.
+
+25
+00:02:36,323 --> 00:02:44,792
+Un dossier protégé : il ne s'ouvre qu'avec un rendez-vous, le code du patient, ou en urgence motivée.
+
+26
+00:02:44,942 --> 00:02:49,181
+Et le patient voit chaque accès à son dossier.
+
+27
+00:02:49,331 --> 00:02:57,415
+Accessible à tous : SMS, ticket papier, annonce vocale en salle, aucune application à installer.
+
+28
+00:02:57,565 --> 00:03:02,881
+Du poste de santé au CHU, 89 services s'activent en un clic.
+
+29
+00:03:03,931 --> 00:03:12,477
+Quel impact ? Nous avons simulé 1 000 matinées de consultation, avec les algorithmes de l'application.
+
+30
+00:03:12,627 --> 00:03:17,635
+Résultat : le temps passé sur place est divisé par deux.
+
+31
+00:03:17,785 --> 00:03:25,408
+Ceux qui attendent chez eux ne passent plus que 18 minutes sur place, au lieu de 3 heures.
+
+32
+00:03:25,558 --> 00:03:30,412
+La salle d'attente est près de deux fois moins pleine.
+
+33
+00:03:30,562 --> 00:03:35,723
+Le pilote servira à confirmer ces chiffres sur le terrain.
+
+34
+00:03:36,773 --> 00:03:43,396
+Notre modèle économique : le patient reste gratuit, les structures financent.
+
+35
+00:03:43,546 --> 00:03:49,785
+Un abonnement mensuel, une petite commission sur les paiements en ligne,
+
+36
+00:03:49,935 --> 00:03:57,250
+des forfaits pour les assureurs et mutuelles, et une option premium pour les familles.
+
+37
+00:03:57,400 --> 00:04:03,869
+Nos coûts restent faibles : pas de matériel, au plus trois SMS par patient.
+
+38
+00:04:04,919 --> 00:04:12,927
+L'application est prête. Dans les trois prochains mois : un pilote dans une ou deux structures.
+
+39
+00:04:13,077 --> 00:04:18,238
+Puis la mise en service, et l'extension à d'autres villes.
+
+40
+00:04:18,388 --> 00:04:24,165
+Notre équipe réunit la médecine, la santé numérique et la finance.
+
+41
+00:04:25,215 --> 00:04:32,146
+Nous cherchons un établissement pilote, un mentorat, et un financement de départ.
+
+42
+00:04:32,296 --> 00:04:36,842
+Sama Tour : moins d'attente, plus de soins. Merci.
+

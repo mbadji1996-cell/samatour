@@ -855,23 +855,51 @@ const MIME = {
   '.webmanifest': 'application/manifest+json',
   '.svg': 'image/svg+xml',
   '.png': 'image/png',
+  '.mp4': 'video/mp4',
+  '.srt': 'text/plain; charset=utf-8',
+  '.pdf': 'application/pdf',
   '.ico': 'image/x-icon',
 };
 
 const PAGES = {
   '/': 'index.html', '/agent': 'agent.html', '/ecran': 'ecran.html',
   '/patient': 'patient.html', '/pro': 'pro.html', '/admin': 'admin.html',
+  '/videos': 'videos.html',
 };
 
-function serveStatic(pathname, res) {
+function serveVideo(full, res, req) {
+  fs.stat(full, (err, st) => {
+    if (err) return sendJson(res, 404, { error: 'Vidéo introuvable' });
+    const m = /bytes=(\d*)-(\d*)/.exec(req.headers.range || '');
+    if (!m) {
+      res.writeHead(200, { 'Content-Type': 'video/mp4', 'Content-Length': st.size, 'Accept-Ranges': 'bytes' });
+      return fs.createReadStream(full).pipe(res);
+    }
+    const start = m[1] ? Number(m[1]) : Math.max(0, st.size - Number(m[2]));
+    const end = m[1] && m[2] ? Math.min(Number(m[2]), st.size - 1) : st.size - 1;
+    if (start >= st.size || start > end) {
+      res.writeHead(416, { 'Content-Range': `bytes */${st.size}` });
+      return res.end();
+    }
+    res.writeHead(206, {
+      'Content-Type': 'video/mp4', 'Accept-Ranges': 'bytes',
+      'Content-Range': `bytes ${start}-${end}/${st.size}`, 'Content-Length': end - start + 1,
+    });
+    fs.createReadStream(full, { start, end }).pipe(res);
+  });
+}
+
+function serveStatic(pathname, res, req) {
   let file = PAGES[pathname];
   if (!file && /^\/t\/[\w-]+$/.test(pathname)) file = 'ticket.html';
   if (!file) file = pathname.slice(1);
   const full = path.normalize(path.join(PUBLIC_DIR, file));
   if (!full.startsWith(PUBLIC_DIR + path.sep)) return sendJson(res, 403, { error: 'Interdit' });
+  const ext = path.extname(full);
+  // Vidéos : lecture progressive avec avance rapide (en-tête Range).
+  if (ext === '.mp4') return serveVideo(full, res, req);
   fs.readFile(full, (err, data) => {
     if (err) return sendJson(res, 404, { error: 'Page introuvable' });
-    const ext = path.extname(full);
     res.writeHead(200, {
       'Content-Type': MIME[ext] || 'application/octet-stream',
       // no-cache : le navigateur revalide à chaque fois, donc les mises à jour (logo, styles) apparaissent tout de suite.
@@ -917,7 +945,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method !== 'GET') throw new HttpError(405, 'Méthode non autorisée');
-    serveStatic(pathname, res);
+    serveStatic(pathname, res, req);
   } catch (err) {
     const status = err.status || 500;
     if (status === 500) console.error(err);
