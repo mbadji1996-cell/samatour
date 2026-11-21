@@ -1,0 +1,15 @@
+# Déploiement en un clic sur Render (https://render.com) : New > Blueprint > choisir ce dépôt.
+services:
+  - type: web
+    name: samatour
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: "echo 'Aucune dépendance à installer'"
+    startCommand: node server.js
+    healthCheckPath: /api/public
+    envVars:
+      - key: DEMO_MODE
+        value: "1"
+      - key: NODE_VERSION
+        value: "20"

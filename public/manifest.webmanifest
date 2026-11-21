@@ -1,0 +1,15 @@
+{
+  "name": "SAMA TOUR",
+  "short_name": "Sama Tour",
+  "description": "Prenez votre ticket et suivez votre tour sans attendre dans les couloirs.",
+  "lang": "fr",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f4f6fb",
+  "theme_color": "#2b3fbf",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/logo/png/samatour-symbole-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo/png/samatour-symbole-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

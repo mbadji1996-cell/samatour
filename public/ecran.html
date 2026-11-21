@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SAMA TOUR · Écran salle d'attente</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/style.css?v=5">
+  <style>
+    body { background: #0f1a4a; color: #fff; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+    .head { display: flex; align-items: center; justify-content: space-between; padding: 2vh 3vw; }
+    .head .brand { gap: 2vw; }
+    .head .brand .wordmark { height: clamp(48px, 7vw, 100px); width: auto; }
+    .head .brand .facility { font-size: clamp(0.9rem, 1.5vw, 1.5rem); font-weight: 600; opacity: 0.85; border-left: 2px solid rgba(255,255,255,0.3); padding-left: 2vw; }
+    .clock { font-size: clamp(1.6rem, 3.6vw, 3.4rem); font-weight: 800; font-variant-numeric: tabular-nums; }
+    .main { flex: 1; display: grid; grid-template-columns: 1fr; gap: 2vw; padding: 0 3vw 2vh; }
+    @media (min-width: 900px) { .main { grid-template-columns: 1fr minmax(240px, 22vw); } }
+    .services { display: grid; gap: 1.6vw; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); align-content: start; }
+    .svc { background: #fff; color: var(--ink); border-radius: 20px; padding: 2vh 1.6vw; display: flex; flex-direction: column; }
+    .svc h2 { font-size: clamp(1.1rem, 1.7vw, 1.7rem); margin: 0; }
+    .svc .room { color: var(--muted); font-weight: 600; font-size: clamp(0.9rem, 1.2vw, 1.2rem); }
+    .svc .now { margin: 1.6vh 0; background: var(--green); color: #fff; border-radius: 14px; padding: 1.4vh 1vw; text-align: center; }
+    .svc .now.empty { background: #eef0f5; color: var(--muted); }
+    .svc .now small { display: block; font-size: clamp(0.75rem, 1vw, 1rem); text-transform: uppercase; letter-spacing: 0.1em; opacity: 0.9; }
+    .svc .now b { display: block; white-space: nowrap; font-size: clamp(2.2rem, 4.2vw, 5rem); line-height: 1.05; letter-spacing: 0.01em; }
+    .svc .next { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: clamp(0.9rem, 1.3vw, 1.3rem); }
+    .svc .next span { background: var(--blue-soft); color: var(--blue-dark); padding: 4px 12px; border-radius: 99px; font-weight: 700; }
+    .svc .foot { margin-top: auto; padding-top: 1.4vh; display: flex; justify-content: space-between; color: var(--muted); font-size: clamp(0.85rem, 1.1vw, 1.15rem); }
+    .pager { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 1.6vh; min-height: 14px; }
+    .pager span { width: 12px; height: 12px; border-radius: 50%; background: rgba(255,255,255,0.3); }
+    .pager span.on { background: #3ddc97; }
+    .pager em { font-style: normal; opacity: 0.75; margin-left: 6px; font-size: clamp(0.85rem, 1.1vw, 1.1rem); }
+    .side { background: #fff; color: var(--ink); border-radius: 20px; padding: 2.4vh 1.4vw; text-align: center; align-self: start; }
+    .side h3 { font-size: clamp(1.1rem, 1.6vw, 1.6rem); }
+    .side p { margin: 1vh 0 0; }
+    .ticker { background: var(--green); padding: 1.4vh 3vw; font-size: clamp(0.95rem, 1.5vw, 1.5rem); font-weight: 600; }
+    .overlay { position: fixed; inset: 0; background: rgba(18, 128, 92, 0.97); display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; z-index: 10; }
+    .overlay small { font-size: clamp(1.2rem, 3vw, 3rem); text-transform: uppercase; letter-spacing: 0.1em; }
+    .overlay b { white-space: nowrap; font-size: clamp(4rem, 16vw, 16rem); line-height: 1; letter-spacing: 0.03em; }
+    .overlay .room { font-size: clamp(1.6rem, 5vw, 5rem); font-weight: 700; }
+    .overlay.show { animation: pop 0.4s ease-out; }
+    @keyframes pop { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    .sound { position: fixed; inset: 0; background: rgba(15, 26, 74, 0.92); display: flex; align-items: center; justify-content: center; z-index: 20; }
+  </style>
+</head>
+<body>
+  <div class="head">
+    <div class="brand">
+      <img class="wordmark" src="/logo/samatour-logo-blanc.svg" alt="SAMA TOUR">
+      <span class="facility"><span id="facility"></span><br><b id="zone"></b></span>
+    </div>
+    <div class="clock" id="clock"></div>
+  </div>
+
+  <div class="main">
+    <div>
+      <div class="services" id="services"></div>
+      <div class="pager" id="pager"></div>
+    </div>
+    <aside class="side">
+      <h3>Prenez votre ticket<br>sur votre téléphone</h3>
+      <div class="qr" id="qr"></div>
+      <p class="small muted" id="url" style="word-break:break-all"></p>
+      <p class="small">Sans smartphone ? Adressez-vous à l'accueil.</p>
+    </aside>
+  </div>
+
+  <div class="ticker">Les femmes enceintes, les personnes âgées, les personnes handicapées et les urgences sont reçues en priorité.</div>
+
+  <div class="overlay hidden" id="overlay">
+    <small>Ticket appelé</small>
+    <b id="oNumber"></b>
+    <div class="room" id="oRoom"></div>
+  </div>
+
+  <div class="sound" id="sound">
+    <button class="btn big green" id="soundBtn">🔊 Démarrer l'écran avec le son</button>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="/app.js?v=4"></script>
+  <script>
+  (function () {
+    'use strict';
+    const $ = (s) => document.querySelector(s);
+    let soundOn = false;
+    let qrUrl = null;
+    const queue = [];
+    let showing = false;
+
+    $('#soundBtn').addEventListener('click', () => {
+      soundOn = true;
+      Sama.chime();
+      $('#sound').remove();
+      if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+    });
+
+    async function load() {
+      const d = await Sama.api('/api/public');
+      $('#facility').textContent = d.facilityName;
+      if (qrUrl !== d.joinUrl) {
+        qrUrl = d.joinUrl;
+        Sama.qr($('#qr'), qrUrl + '/', Math.min(240, Math.max(140, Math.round(window.innerWidth * 0.14))));
+        $('#url').textContent = qrUrl.replace(/^https?:\/\//, '');
+      }
+      // Filtre : ?categorie=Spécialités ou ?services=MG,PED. Sinon : les services qui ont des patients.
+      let list = d.services;
+      if (filterCats.length) list = list.filter((s) => filterCats.includes(s.category));
+      if (filterIds.length) list = list.filter((s) => filterIds.includes(s.id));
+      if (!filterCats.length && !filterIds.length) {
+        const busy = list.filter((s) => s.current || s.waiting);
+        if (busy.length) list = busy;
+      }
+      $('#zone').textContent = filterCats.length ? filterCats.join(' · ') : '';
+      allCards = list;
+      renderPage();
+    }
+
+    // Pagination : au-delà de PAGE_SIZE services, l'écran fait défiler les pages toutes les 12 s.
+    const params = new URLSearchParams(location.search);
+    const filterCats = params.getAll('categorie').flatMap((c) => c.split(',')).filter(Boolean);
+    const filterIds = (params.get('services') || '').toUpperCase().split(',').filter(Boolean);
+    const PAGE_SIZE = Number(params.get('parpage')) || 6;
+    let allCards = [];
+    let page = 0;
+
+    setInterval(() => {
+      const pages = Math.ceil(allCards.length / PAGE_SIZE);
+      if (pages > 1) { page = (page + 1) % pages; renderPage(); }
+    }, 12000);
+
+    function renderPage() {
+      const pages = Math.max(1, Math.ceil(allCards.length / PAGE_SIZE));
+      if (page >= pages) page = 0;
+      $('#pager').innerHTML = pages > 1
+        ? Array.from({ length: pages }, (_, i) => `<span class="${i === page ? 'on' : ''}"></span>`).join('') + `<em>Page ${page + 1}/${pages}</em>`
+        : '';
+      const shown = allCards.slice(page * PAGE_SIZE, page * PAGE_SIZE + PAGE_SIZE);
+      $('#services').innerHTML = shown.length ? '' : '<section class="svc"><h2>Aucun service à afficher</h2></section>';
+      $('#services').innerHTML += shown.map((s) => `
+        <section class="svc">
+          <h2>${Sama.esc(s.name)}</h2>
+          <div class="room">${Sama.esc(s.room)}</div>
+          <div class="now ${s.current ? '' : 'empty'}">
+            <small>${s.current ? 'En consultation' : 'Aucun appel'}</small>
+            <b>${s.current ? Sama.esc(s.current) : '—'}</b>
+          </div>
+          <div class="next">${s.next.length ? 'Suivants : ' + s.next.map((n) => `<span>${Sama.esc(n)}</span>`).join('') : '<span style="background:none;color:var(--muted)">Personne en attente</span>'}</div>
+          <div class="foot"><span>${s.waiting} en attente</span><span>Attente ${Sama.duration(s.estimateNewMin)}</span></div>
+        </section>`).join('');
+    }
+
+    function announce(a) {
+      // Un écran filtré n'annonce que les tickets de sa zone.
+      if (filterCats.length || filterIds.length) {
+        const id = String(a.number).split('-')[0];
+        if (!allCards.some((s) => s.id === id)) return;
+      }
+      queue.push(a);
+      if (!showing) playNext();
+    }
+
+    function playNext() {
+      const a = queue.shift();
+      if (!a) { showing = false; return; }
+      showing = true;
+      $('#oNumber').textContent = a.number;
+      $('#oRoom').textContent = `→ ${a.room} · ${a.serviceName}`;
+      const o = $('#overlay');
+      o.classList.remove('hidden', 'show');
+      void o.offsetWidth;
+      o.classList.add('show');
+      if (soundOn) {
+        Sama.chime();
+        setTimeout(() => Sama.speak(a.number, a.room), 900);
+      }
+      setTimeout(() => { o.classList.add('hidden'); setTimeout(playNext, 400); }, 7000);
+    }
+
+    function tick() {
+      $('#clock').textContent = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+    tick();
+    setInterval(tick, 5000);
+    if ('speechSynthesis' in window) speechSynthesis.getVoices();
+
+    load().catch(() => {});
+    Sama.live({ update: () => load().catch(() => {}), announce });
+  })();
+  </script>
+</body>
+</html>

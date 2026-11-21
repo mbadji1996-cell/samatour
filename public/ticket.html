@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2b3fbf">
+  <title>SAMA TOUR · Mon ticket</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="apple-touch-icon" href="/logo/png/samatour-symbole-192.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/style.css?v=5">
+  <style>
+    .ticket { text-align: center; padding: 22px 16px; }
+    .ticket .label { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.78rem; color: var(--muted); font-weight: 700; }
+    .ticket .number { font-size: 3.4rem; font-weight: 800; color: var(--blue); letter-spacing: 0.02em; margin: 4px 0 2px; }
+    .ticket .service { font-weight: 600; }
+    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+    .stat { background: var(--bg); border-radius: 12px; padding: 12px; }
+    .stat b { display: block; font-size: 1.6rem; color: var(--ink); }
+    .stat span { font-size: 0.82rem; color: var(--muted); }
+    .progress { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; margin-top: 16px; }
+    .progress > div { height: 100%; background: var(--blue); width: 0; transition: width 0.6s; }
+    .called { background: var(--green); color: #fff; border-color: var(--green); animation: pulse 1.4s infinite; }
+    .called .label, .called .service { color: #e5fff4; }
+    .called .number { color: #fff; }
+    @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(18,128,92,0.5); } 50% { box-shadow: 0 0 0 14px rgba(18,128,92,0); } }
+    .stars { display: flex; justify-content: center; gap: 6px; margin-top: 8px; }
+    .stars button { font-size: 2rem; background: none; border: 0; cursor: pointer; color: #c9cfdf; padding: 2px; }
+    .stars button.on { color: #f2a900; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><img src="/logo/samatour-symbole-blanc.svg" alt=""><div><b>SAMA <em>TOUR</em></b><span>Mon ticket</span></div></a>
+    <div class="right" id="clock"></div>
+  </header>
+
+  <main class="wrap">
+    <div id="banner" class="banner hidden"></div>
+    <div id="ticket" class="card ticket"><p class="muted">Chargement du ticket…</p></div>
+    <div id="actions"></div>
+    <p class="footer-note">Cette page se met à jour toute seule. Vous pouvez la fermer et revenir plus tard avec le même lien.</p>
+  </main>
+
+  <script src="/app.js?v=4"></script>
+  <script>
+  (function () {
+    'use strict';
+    const $ = (s) => document.querySelector(s);
+    const token = location.pathname.split('/').pop();
+    let prev = null;
+    let maxAhead = null;
+
+    async function load() {
+      let t;
+      try {
+        t = await Sama.api('/api/tickets/' + encodeURIComponent(token));
+      } catch (e) {
+        $('#ticket').innerHTML = `<p class="error">${Sama.esc(e.message)}</p><a class="btn" href="/">Prendre un nouveau ticket</a>`;
+        return;
+      }
+      Sama.store.set('samatour-ticket', { token: t.token, number: t.number, day: new Date(t.createdAt).toDateString() });
+      alertOnChange(t);
+      render(t);
+      prev = t;
+    }
+
+    function alertOnChange(t) {
+      if (!prev) return;
+      if (t.status === 'called' && prev.status !== 'called') {
+        Sama.chime();
+        Sama.notify("C'est votre tour !", `Ticket ${t.number} , rendez-vous : ${t.room}.`);
+      } else if (t.leaveNow && !prev.leaveNow) {
+        Sama.chime();
+        Sama.notify('Partez maintenant', `Attente estimée ${Sama.duration(t.estimateMin)}, votre trajet ≈ ${t.travelMin} min.`);
+      } else if (t.approaching && !prev.approaching) {
+        Sama.chime();
+        Sama.notify('Votre tour approche', `Ticket ${t.number} : rejoignez la salle d'attente.`);
+      }
+    }
+
+    function render(t) {
+      const card = $('#ticket');
+      const banner = $('#banner');
+      card.classList.toggle('called', t.status === 'called');
+      banner.className = 'banner hidden';
+      const head = `
+        <div class="label">Ticket</div>
+        <div class="number">${Sama.esc(t.number)}</div>
+        <div class="service">${Sama.esc(t.serviceName)} · ${Sama.esc(t.room)}</div>
+        ${t.name ? `<div class="small muted" style="margin-top:4px">${Sama.esc(t.name)}</div>` : ''}
+        ${t.priority ? '<div style="margin-top:8px"><span class="pill amber">Prioritaire</span></div>' : ''}`;
+
+      if (t.status === 'waiting') {
+        if (maxAhead == null || t.ahead > maxAhead) maxAhead = Math.max(t.ahead, 1);
+        const pct = Math.round(((maxAhead - t.ahead) / maxAhead) * 100);
+        card.innerHTML = head + `
+          <div class="stats">
+            <div class="stat"><b>${t.ahead === 0 ? 'Prochain' : t.ahead}</b><span>${t.ahead === 0 ? 'vous êtes le suivant' : `personne${t.ahead > 1 ? 's' : ''} avant vous`}</span></div>
+            <div class="stat"><b>${Sama.duration(t.estimateMin).replace('≈ ', '')}</b><span>attente estimée</span></div>
+          </div>
+          <div class="progress"><div style="width:${pct}%"></div></div>
+          <p class="small muted" style="margin:10px 0 0">Ticket pris à ${Sama.time(t.createdAt)}${t.onSite ? '' : ` · trajet ≈ ${t.travelMin} min`}</p>`;
+        if (t.leaveNow) show('amber', `🚶 Partez maintenant ! Votre trajet (≈ ${t.travelMin} min) correspond au temps d'attente restant.`);
+        else if (t.approaching) show('amber', "⏳ Votre tour approche : rejoignez la salle d'attente.");
+        else if (!t.onSite) show('info', `🏠 Restez chez vous. Nous vous dirons quand partir (trajet ≈ ${t.travelMin} min).`);
+        else show('info', 'Vous pouvez patienter où vous voulez : cette page vous préviendra.');
+      } else if (t.status === 'called') {
+        card.innerHTML = head + `<h2 style="margin-top:14px;font-size:1.5rem">C'est votre tour !</h2><p style="margin:0">Rendez-vous : <b>${Sama.esc(t.room)}</b></p>`;
+      } else if (t.status === 'done') {
+        card.innerHTML = head + `
+          <h2 style="margin-top:14px">Consultation terminée</h2>
+          <p class="muted" style="margin:0">Comment s'est passée votre attente ?</p>
+          <div class="stars" id="stars">${[1, 2, 3, 4, 5].map((n) => `<button aria-label="${n} sur 5" data-n="${n}" class="${t.rating >= n ? 'on' : ''}">★</button>`).join('')}</div>
+          ${t.rating ? '<p class="small muted">Merci pour votre avis !</p>' : ''}`;
+        card.querySelectorAll('#stars button').forEach((b) => b.addEventListener('click', async () => {
+          render(await Sama.api(`/api/tickets/${encodeURIComponent(token)}/rating`, { method: 'POST', body: { score: Number(b.dataset.n) } }));
+        }));
+      } else if (t.status === 'absent') {
+        card.innerHTML = head;
+        show('red', "Vous avez été appelé mais vous n'étiez pas là. Adressez-vous à l'accueil pour être remis dans la file.");
+      } else {
+        card.innerHTML = head;
+        show('red', 'Ce ticket a été annulé.');
+      }
+
+      const actions = $('#actions');
+      const canNotify = 'Notification' in window && Notification.permission === 'default';
+      actions.innerHTML = '';
+      if (t.status === 'waiting') {
+        actions.innerHTML = `
+          ${canNotify ? '<button class="btn ghost block" id="notif">🔔 Activer les alertes sur ce téléphone</button>' : ''}
+          <button class="btn link block" id="cancel" style="margin-top:8px">Je ne viens plus : annuler mon ticket</button>`;
+      } else if (t.status !== 'called') {
+        actions.innerHTML = '<a class="btn ghost block" href="/">Prendre un nouveau ticket</a>';
+      }
+      const n = $('#notif');
+      if (n) n.addEventListener('click', () => Notification.requestPermission().then(() => render(t)));
+      const c = $('#cancel');
+      if (c) c.addEventListener('click', async () => {
+        if (!confirm('Annuler votre ticket ? Vous perdrez votre place dans la file.')) return;
+        render(await Sama.api(`/api/tickets/${encodeURIComponent(token)}/cancel`, { method: 'POST' }));
+      });
+
+      function show(kind, html) {
+        banner.className = 'banner ' + kind;
+        banner.innerHTML = html;
+      }
+    }
+
+    function tick() { $('#clock').textContent = Sama.time(Date.now()); }
+    tick();
+    setInterval(tick, 15000);
+
+    load();
+    Sama.live({ update: load });
+  })();
+  </script>
+</body>
+</html>

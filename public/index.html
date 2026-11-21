@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2b3fbf">
+  <title>SAMA TOUR · Prendre un ticket</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="apple-touch-icon" href="/logo/png/samatour-symbole-192.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/style.css?v=5">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/"><img src="/logo/samatour-symbole-blanc.svg" alt=""><div><b>SAMA <em>TOUR</em></b><span>Votre tour, sans attendre au couloir</span></div></a>
+    <div class="right" id="facility"></div>
+  </header>
+
+  <main class="wrap">
+    <div id="existing" class="banner info hidden"></div>
+
+    <form id="form" class="card" novalidate>
+      <h2>1. Choisissez le service</h2>
+      <div id="picked" class="hidden"></div>
+      <div id="picker">
+        <input id="search" type="search" placeholder="🔍 Rechercher : dentiste, vaccin, analyse…" autocomplete="off" aria-label="Rechercher un service">
+        <div class="cats" id="cats"></div>
+        <div id="services"><p class="muted">Chargement…</p></div>
+      </div>
+
+      <h2 style="margin-top:20px">2. Où êtes-vous ?</h2>
+      <div class="seg" id="where">
+        <button type="button" class="choice selected" data-onsite="1"><span class="title">Sur place</span><span class="meta">Je suis à la structure</span></button>
+        <button type="button" class="choice" data-onsite="0"><span class="title">À la maison</span><span class="meta">On me dira quand partir</span></button>
+      </div>
+      <div id="travelBox" class="hidden">
+        <label for="travel">Temps de trajet jusqu'à la structure</label>
+        <select id="travel">
+          <option value="10">Environ 10 min</option>
+          <option value="20" selected>Environ 20 min</option>
+          <option value="30">Environ 30 min</option>
+          <option value="45">Environ 45 min</option>
+          <option value="60">Environ 1 h</option>
+          <option value="90">Environ 1 h 30</option>
+        </select>
+      </div>
+
+      <h2 style="margin-top:20px">3. Vos informations</h2>
+      <label for="name">Prénom <span class="opt">(facultatif)</span></label>
+      <input id="name" type="text" autocomplete="given-name" maxlength="40" placeholder="Ex. Aminata">
+      <label for="phone">Téléphone <span class="opt">(pour recevoir les SMS)</span></label>
+      <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="77 123 45 67">
+      <p id="phoneHint" class="small muted">Recommandé si vous êtes à la maison : nous vous enverrons un SMS quand il sera temps de partir.</p>
+
+      <button class="btn big block" id="submit" type="submit" style="margin-top:14px">Prendre mon ticket</button>
+      <p id="error" class="error hidden"></p>
+    </form>
+
+    <img class="logo-full" src="/logo/samatour-logo.svg" alt="SAMA TOUR" style="max-width:200px;opacity:0.9;margin-top:22px">
+    <p class="footer-note" style="margin-top:8px">
+      Nous ne demandons aucune information médicale. Votre prénom et votre numéro servent uniquement à vous prévenir de votre tour.
+    </p>
+  </main>
+
+  <script src="/app.js?v=4"></script>
+  <script>
+  (function () {
+    'use strict';
+    const $ = (s) => document.querySelector(s);
+    let selected = new URLSearchParams(location.search).get('service');
+    let onSite = true;
+    let services = [];
+    let cat = 'Tous';
+
+    const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+    async function load() {
+      const data = await Sama.api('/api/public');
+      $('#facility').textContent = data.facilityName;
+      services = data.services;
+      if (selected && !services.some((s) => s.id === selected)) selected = null;
+      render();
+    }
+
+    function card(s) {
+      return `
+        <button type="button" class="choice ${s.id === selected ? 'selected' : ''}" data-id="${s.id}">
+          <span>
+            <span class="title">${Sama.esc(s.name)}</span><br>
+            <span class="meta">${s.waiting ? `${s.waiting} personne${s.waiting > 1 ? 's' : ''} en attente` : 'Personne en attente'} · ${Sama.esc(s.room)}</span>
+          </span>
+          <span class="pill ${s.estimateNewMin > 60 ? 'amber' : s.waiting ? '' : 'green'}">${Sama.duration(s.estimateNewMin)}</span>
+        </button>`;
+    }
+
+    function render() {
+      // Service choisi : on replie la liste pour garder un formulaire court.
+      const chosen = services.find((s) => s.id === selected);
+      $('#picked').classList.toggle('hidden', !chosen);
+      $('#picker').classList.toggle('hidden', !!chosen);
+      if (chosen) {
+        $('#picked').innerHTML = `<div class="choices">${card(chosen)}</div>
+          <button type="button" class="btn link" id="change">↺ Changer de service</button>`;
+        $('#change').addEventListener('click', () => { selected = null; render(); $('#search').focus(); });
+        return;
+      }
+
+      const cats = ['Tous', ...new Set(services.map((s) => s.category))];
+      if (!cats.includes(cat)) cat = 'Tous';
+      $('#cats').innerHTML = cats.map((c) => `<button type="button" class="cat ${c === cat ? 'on' : ''}" data-cat="${Sama.esc(c)}">${Sama.esc(c)}</button>`).join('');
+
+      const q = norm($('#search').value.trim());
+
+      // Accueil (pas de recherche, "Tous") : les services les plus demandés + les catégories en tuiles.
+      // Avec près de 90 services, une liste complète serait trop longue sur un téléphone.
+      if (!q && cat === 'Tous' && services.length > 12) {
+        const popular = services.filter((s) => s.waiting || s.current).sort((a, b) => b.waiting - a.waiting).slice(0, 6);
+        $('#services').innerHTML = `
+          ${popular.length ? `<div class="group-title">Les plus demandés en ce moment</div><div class="choices">${popular.map(card).join('')}</div>` : ''}
+          <div class="group-title">Tous les services par catégorie</div>
+          <div class="cat-grid">${cats.slice(1).map((c) => {
+            const n = services.filter((s) => s.category === c).length;
+            return `<button type="button" class="cat-tile" data-cat="${Sama.esc(c)}"><b>${Sama.esc(c)}</b><span>${n} service${n > 1 ? 's' : ''}</span></button>`;
+          }).join('')}</div>`;
+        return;
+      }
+      const list = services.filter((s) =>
+        (q ? norm([s.name, s.category, s.keywords, s.id].join(' ')).includes(q) : cat === 'Tous' || s.category === cat));
+
+      if (!list.length) {
+        $('#services').innerHTML = '<p class="muted">Aucun service trouvé. Essayez un autre mot, ou demandez à l\'accueil.</p>';
+        return;
+      }
+      const groups = [...new Set(list.map((s) => s.category))];
+      $('#services').innerHTML = groups.map((g) => `
+        <div class="group-title">${Sama.esc(g)}</div>${g === 'Urgences' ? '<p class="banner red small" style="margin:0 0 8px">Urgence grave (perte de connaissance, saignement important, difficulté à respirer) : allez directement aux urgences, sans attendre de ticket.</p>' : ''}
+        <div class="choices">${list.filter((s) => s.category === g).map(card).join('')}</div>`).join('');
+    }
+
+    $('#services').addEventListener('click', (e) => {
+      const tile = e.target.closest('[data-cat]');
+      if (tile) {
+        cat = tile.dataset.cat;
+        render();
+        $('#cats').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      const b = e.target.closest('[data-id]');
+      if (!b) return;
+      selected = b.dataset.id;
+      $('#search').value = '';
+      render();
+      document.querySelector('#where').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+    $('#cats').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-cat]');
+      if (!b) return;
+      cat = b.dataset.cat;
+      $('#search').value = '';
+      render();
+    });
+    $('#search').addEventListener('input', render);
+
+    document.querySelectorAll('#where .choice').forEach((b) =>
+      b.addEventListener('click', () => {
+        onSite = b.dataset.onsite === '1';
+        document.querySelectorAll('#where .choice').forEach((x) => x.classList.toggle('selected', x === b));
+        $('#travelBox').classList.toggle('hidden', onSite);
+      }));
+
+    $('#form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = $('#error');
+      err.classList.add('hidden');
+      if (!selected) { err.textContent = 'Choisissez un service.'; err.classList.remove('hidden'); return; }
+      const phone = $('#phone').value.trim();
+      if (phone && phone.replace(/\D/g, '').length < 9) {
+        err.textContent = 'Le numéro de téléphone semble incomplet.'; err.classList.remove('hidden'); return;
+      }
+      $('#submit').disabled = true;
+      try {
+        const t = await Sama.api('/api/tickets', {
+          method: 'POST',
+          body: { serviceId: selected, name: $('#name').value, phone, onSite, travelMin: Number($('#travel').value) },
+        });
+        Sama.store.set('samatour-ticket', { token: t.token, number: t.number, day: new Date().toDateString() });
+        location.href = '/t/' + t.token;
+      } catch (ex) {
+        err.textContent = ex.message; err.classList.remove('hidden');
+        $('#submit').disabled = false;
+      }
+    });
+
+    // Ticket déjà pris aujourd'hui ?
+    (async function checkExisting() {
+      const saved = Sama.store.get('samatour-ticket');
+      if (!saved || saved.day !== new Date().toDateString()) return;
+      try {
+        const t = await Sama.api('/api/tickets/' + saved.token);
+        if (t.status === 'waiting' || t.status === 'called') {
+          const box = $('#existing');
+          box.innerHTML = `Vous avez déjà le ticket <b>${Sama.esc(t.number)}</b>. <a href="/t/${encodeURIComponent(t.token)}">Suivre mon ticket →</a>`;
+          box.classList.remove('hidden');
+        }
+      } catch {}
+    })();
+
+    load().catch((e) => { $('#services').innerHTML = `<p class="error">${Sama.esc(e.message)}</p>`; });
+    Sama.live({ update: () => load().catch(() => {}) });
+  })();
+  </script>
+</body>
+</html>

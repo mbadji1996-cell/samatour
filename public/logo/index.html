@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SAMA TOUR · Logo</title>
+  <link rel="icon" href="samatour-symbole.svg?v=3">
+  <style>
+    body { margin: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6fb; color: #16203a; }
+    .wrap { max-width: 1000px; margin: 0 auto; padding: 24px 16px; }
+    h1 { margin: 0 0 4px; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); margin-top: 20px; }
+    .tile { border-radius: 16px; padding: 28px; display: flex; align-items: center; justify-content: center; min-height: 170px; border: 1px solid #dde2ee; }
+    .light { background: #fff; }
+    .dark { background: #2b3fbf; }
+    .navy { background: #0f1a4a; }
+    .tile img { max-width: 100%; }
+    .sizes { display: flex; align-items: flex-end; gap: 22px; }
+    .colors { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
+    .sw { width: 150px; border-radius: 12px; overflow: hidden; border: 1px solid #dde2ee; background: #fff; font-size: 0.85rem; }
+    .sw div { height: 64px; }
+    .sw p { margin: 8px 10px; }
+    .phone { width: 220px; border-radius: 28px; background: #16203a; padding: 10px; }
+    .phone .screen { background: #fff; border-radius: 20px; overflow: hidden; }
+    .phone .bar { background: #2b3fbf; padding: 12px; display: flex; gap: 8px; align-items: center; color: #fff; font-weight: 800; letter-spacing: 0.04em; }
+    .phone .bar img { width: 30px; }
+    .phone .body { padding: 14px; text-align: center; color: #2b3fbf; font-weight: 800; font-size: 2rem; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Logo SAMA TOUR</h1>
+    <p>Les points représentent les patients qui attendent leur tour. Ils deviennent une flèche qui fait le tour, autour de la croix de la santé : <b>la file avance, le patient est pris en charge.</b></p>
+
+    <div class="grid">
+      <div class="tile light"><img src="samatour-logo.svg?v=3" alt="Logo SAMA TOUR"></div>
+      <div class="tile navy"><img src="samatour-logo-blanc.svg?v=3" alt="Logo SAMA TOUR blanc"></div>
+      <div class="tile light sizes">
+        <img src="samatour-symbole.svg?v=3" width="128" alt="">
+        <img src="samatour-symbole.svg?v=3" width="64" alt="">
+        <img src="samatour-symbole.svg?v=3" width="32" alt="">
+        <img src="samatour-symbole.svg?v=3" width="16" alt="">
+      </div>
+      <div class="tile dark">
+        <div class="phone"><div class="screen">
+          <div class="bar"><img src="samatour-symbole.svg?v=3" alt="">SAMA TOUR</div>
+          <div class="body">PED-012<div style="font-size:0.8rem;color:#5f6b85;font-weight:600">4 personnes avant vous</div></div>
+        </div></div>
+      </div>
+    </div>
+
+    <h2 style="margin-top:28px">Couleurs</h2>
+    <div class="colors">
+      <div class="sw"><div style="background:#2b3fbf"></div><p><b>Bleu Sama</b><br>#2B3FBF</p></div>
+      <div class="sw"><div style="background:#12805c"></div><p><b>Vert santé</b><br>#12805C</p></div>
+      <div class="sw"><div style="background:#3ddc97"></div><p><b>Vert clair</b><br>#3DDC97</p></div>
+      <div class="sw"><div style="background:#0f1a4a"></div><p><b>Bleu nuit</b><br>#0F1A4A</p></div>
+      <div class="sw"><div style="background:#16203a"></div><p><b>Encre</b><br>#16203A</p></div>
+    </div>
+  </div>
+</body>
+</html>

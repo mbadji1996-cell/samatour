@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2b3fbf">
+  <title>SAMA TOUR · Console agent</title>
+  <link rel="icon" href="/icon.svg">
+  <link rel="apple-touch-icon" href="/logo/png/samatour-symbole-192.png">
+  <link rel="stylesheet" href="/style.css?v=5">
+  <style>
+    .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .tab { padding: 9px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; cursor: pointer; font: inherit; font-weight: 600; color: var(--ink); }
+    .tab.on { background: var(--blue); color: #fff; border-color: var(--blue); }
+    .tab .count { display: inline-block; min-width: 22px; padding: 0 6px; margin-left: 6px; border-radius: 99px; background: var(--blue-soft); color: var(--blue-dark); font-size: 0.8rem; }
+    .tab.on .count { background: rgba(255,255,255,0.25); color: #fff; }
+    .grid { display: grid; gap: 14px; grid-template-columns: 1fr; }
+    @media (min-width: 900px) { .grid { grid-template-columns: 1.6fr 1fr; } }
+    .current { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .current .num { font-size: 2.6rem; font-weight: 800; color: var(--blue); line-height: 1; }
+    .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+    .actions .wide { grid-column: 1 / -1; }
+    .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+    .row:first-child { border-top: 0; }
+    .row .n { font-weight: 800; min-width: 74px; }
+    .row .who { flex: 1; min-width: 0; }
+    .row .who .meta { font-size: 0.8rem; color: var(--muted); }
+    .row .ops { display: flex; gap: 4px; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .kpi { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+    .kpi b { display: block; font-size: 1.7rem; }
+    .kpi span { font-size: 0.82rem; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 600; font-size: 0.8rem; }
+    td.r, th.r { text-align: right; }
+    .table-wrap { overflow-x: auto; }
+    .sms { font-size: 0.85rem; padding: 8px 0; border-top: 1px solid var(--line); }
+    .sms:first-child { border-top: 0; }
+    .picker-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .picker-bar select { max-width: 460px; font-weight: 600; }
+    #serviceTabs::before { content: "Services avec des patients :"; align-self: center; font-size: 0.8rem; color: var(--muted); margin-right: 4px; }
+    .row.off { opacity: 0.55; }
+    .profile-box { background: var(--blue-soft); border-radius: 12px; padding: 12px; margin-bottom: 8px; }
+    .profile-row { display: flex; gap: 8px; align-items: center; }
+    .profile-row select, .profile-row input { flex: 1; min-width: 0; }
+    .cat-head { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px; }
+    .cat-head .btn.link { text-transform: none; letter-spacing: 0; font-size: 0.78rem; padding: 2px 6px; }
+    #catalogSearch { margin-bottom: 4px; }
+    .printable { text-align: center; }
+    .printable .num { font-size: 3rem; font-weight: 800; color: var(--blue); }
+    @media print {
+      body * { visibility: hidden; }
+      .printable, .printable * { visibility: visible; }
+      .printable { position: absolute; left: 0; top: 0; width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar no-print">
+    <a class="brand" href="/agent"><img src="/logo/samatour-symbole-blanc.svg" alt=""><div><b>SAMA <em>TOUR</em></b><span>Console agent / médecin</span></div></a>
+    <div class="right"><span id="facility"></span><br><a href="/ecran" target="_blank" style="color:#fff">Écran salle ↗</a> · <a href="#" id="logout" style="color:#fff">Quitter</a></div>
+  </header>
+
+  <!-- Connexion -->
+  <main class="wrap" id="loginView">
+    <form class="card" id="loginForm">
+      <img class="logo-full" src="/logo/samatour-logo.svg" alt="SAMA TOUR" style="margin:6px auto 18px">
+      <h2>Connexion de l'agent</h2>
+      <p class="muted small">Entrez le code PIN de la structure (démo : 1234).</p>
+      <label for="pin">Code PIN</label>
+      <input id="pin" type="password" inputmode="numeric" autocomplete="current-password">
+      <button class="btn block" style="margin-top:14px">Se connecter</button>
+      <p class="error hidden" id="loginError"></p>
+    </form>
+  </main>
+
+  <!-- Console -->
+  <main class="wrap wide hidden" id="appView">
+    <div class="tabs" id="views">
+      <button class="tab on" data-view="queue">File d'attente</button>
+      <button class="tab" data-view="stats">Statistiques</button>
+      <button class="tab" data-view="catalog">Services</button>
+    </div>
+
+    <section id="queueView">
+      <div class="picker-bar">
+        <label for="servicePick" style="margin:0">Mon poste :</label>
+        <select id="servicePick"></select>
+      </div>
+      <div class="tabs" id="serviceTabs"></div>
+      <div class="grid">
+        <div>
+          <div class="card" id="currentCard"></div>
+          <div class="card">
+            <h2>En attente <span class="pill" id="waitingCount"></span></h2>
+            <div id="queue"></div>
+          </div>
+        </div>
+        <div>
+          <form class="card" id="deskForm">
+            <h2>Patient à l'accueil</h2>
+            <p class="small muted" style="margin:0">Pour les patients sans smartphone : ticket imprimé ou noté à la main.</p>
+            <label for="dService">Service</label>
+            <select id="dService"></select>
+            <label for="dName">Prénom <span class="opt">(facultatif)</span></label>
+            <input id="dName" type="text" maxlength="40">
+            <label for="dPhone">Téléphone <span class="opt">(facultatif, pour le SMS)</span></label>
+            <input id="dPhone" type="tel" inputmode="tel" placeholder="77 123 45 67">
+            <label class="check" style="margin-top:12px"><input type="checkbox" id="dPriority"> Prioritaire (femme enceinte, personne âgée, handicap, urgence)</label>
+            <button class="btn green block" style="margin-top:14px">Créer le ticket</button>
+            <p class="error hidden" id="deskError"></p>
+          </form>
+          <div class="card">
+            <h2>Absents</h2>
+            <div id="absent"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="catalogView" class="hidden">
+      <div class="grid">
+        <div class="card">
+          <h2>Services de la structure <span class="pill" id="catalogCount"></span></h2>
+          <div class="profile-box">
+            <label for="profileLevel" style="margin-top:0">Type de structure</label>
+            <div class="profile-row">
+              <select id="profileLevel"></select>
+              <button type="button" class="btn sm" id="applyProfile">Appliquer</button>
+            </div>
+            <p class="small muted" style="margin:6px 0 0">Active d'un coup les services qu'on trouve habituellement dans ce type de structure. Vous pouvez ensuite cocher ou décocher service par service.</p>
+          </div>
+          <p class="small muted">Décochez un service pour le retirer de la page patient (par exemple quand le spécialiste n'est pas là aujourd'hui).</p>
+          <div class="profile-row">
+            <input id="catalogSearch" type="search" placeholder="🔍 Filtrer les services…" autocomplete="off">
+            <select id="catalogShow" style="width:auto">
+              <option value="all">Tous</option>
+              <option value="on">Actifs</option>
+              <option value="off">Désactivés</option>
+            </select>
+          </div>
+          <div id="catalog"></div>
+        </div>
+        <div>
+          <form class="card" id="serviceForm">
+            <h2 id="sfTitle">Ajouter un service</h2>
+            <input type="hidden" id="sfId">
+            <label for="sfName">Nom du service</label>
+            <input id="sfName" type="text" maxlength="60" placeholder="Ex. Néphrologie" required>
+            <label for="sfCategory">Catégorie</label>
+            <input id="sfCategory" type="text" maxlength="40" list="categoryList" placeholder="Ex. Spécialités">
+            <datalist id="categoryList"></datalist>
+            <label for="sfRoom">Bureau / salle</label>
+            <input id="sfRoom" type="text" maxlength="40" placeholder="Ex. Bureau 16">
+            <label for="sfMinutes">Durée moyenne d'un passage (minutes)</label>
+            <input id="sfMinutes" type="text" inputmode="numeric" value="10">
+            <label for="sfKeywords">Mots-clés pour la recherche <span class="opt">(facultatif)</span></label>
+            <input id="sfKeywords" type="text" maxlength="200" placeholder="Ex. rein dialyse">
+            <label for="sfCode">Code du ticket <span class="opt">(facultatif, ex. NEP)</span></label>
+            <input id="sfCode" type="text" maxlength="5" style="text-transform:uppercase">
+            <div style="display:flex;gap:8px;margin-top:14px">
+              <button type="button" class="btn ghost hidden" id="sfCancel" style="flex:1">Annuler</button>
+              <button class="btn green" style="flex:2" id="sfSubmit">Ajouter le service</button>
+            </div>
+            <p class="error hidden" id="sfError"></p>
+          </form>
+          <div class="card">
+            <h2>Écrans de salle d'attente</h2>
+            <p class="small muted" style="margin-top:0">Avec beaucoup de services, mettez un écran par zone. Chaque lien n'affiche que sa catégorie.</p>
+            <div id="screenLinks"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="statsView" class="hidden">
+      <div class="kpis" id="kpis"></div>
+      <div class="card">
+        <h2>Par service (aujourd'hui)</h2>
+        <div class="table-wrap"><table id="statsTable"></table></div>
+      </div>
+      <div class="grid">
+        <div class="card">
+          <h2>SMS envoyés <span class="pill grey" id="smsMode"></span></h2>
+          <div id="smsLog"></div>
+        </div>
+        <div class="card">
+          <h2>Outils</h2>
+          <p class="small muted">L'export ne contient ni nom ni téléphone : il peut être partagé avec la direction de la structure.</p>
+          <button class="btn ghost block" id="export">Exporter la journée (CSV)</button>
+          <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+          <button class="btn amber block" id="seed">Charger des données de démonstration</button>
+          <button class="btn red block" id="reset" style="margin-top:8px">Réinitialiser la journée</button>
+          <p class="small muted">La journée en cours est archivée avant chaque réinitialisation.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="modal-bg hidden" id="modal">
+    <div class="modal">
+      <div class="printable">
+        <img class="logo-full" src="/logo/samatour-logo.svg" alt="SAMA TOUR" style="max-width:220px;margin-bottom:6px">
+        <div class="small muted" id="mFacility"></div>
+        <div class="num" id="mNumber"></div>
+        <div id="mService" style="font-weight:600"></div>
+        <div class="qr" id="mQr" style="margin-top:10px"></div>
+        <p class="small">Scannez pour suivre votre tour sur votre téléphone.</p>
+        <p class="small muted" id="mTime"></p>
+      </div>
+      <div class="no-print" style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn ghost" style="flex:1" id="mClose">Fermer</button>
+        <button class="btn" style="flex:1" onclick="window.print()">Imprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="/app.js?v=4"></script>
+  <script>
+  (function () {
+    'use strict';
+    const $ = (s) => document.querySelector(s);
+    let state = null;
+    let sid = Sama.store.get('samatour-agent-service');
+    let view = 'queue';
+    let es = null;
+
+    // ---- Connexion ----
+    $('#loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        await Sama.api('/api/agent/login', { method: 'POST', body: { pin: $('#pin').value } });
+        Sama.setPin($('#pin').value);
+        start();
+      } catch (ex) {
+        $('#loginError').textContent = ex.message;
+        $('#loginError').classList.remove('hidden');
+      }
+    });
+    $('#logout').addEventListener('click', (e) => { e.preventDefault(); Sama.setPin(''); location.reload(); });
+
+    async function start() {
+      $('#loginView').classList.add('hidden');
+      $('#appView').classList.remove('hidden');
+      await load();
+      if (!es) es = Sama.live({ update: load });
+    }
+
+    async function load() {
+      try {
+        state = await Sama.api('/api/agent/state');
+      } catch (e) {
+        if (e.status === 401) { Sama.setPin(''); location.reload(); }
+        return;
+      }
+      if (!state.services.some((s) => s.id === sid)) sid = state.services[0] && state.services[0].id;
+      render();
+    }
+
+    // ---- Actions ----
+    async function act(path, body, confirmText) {
+      if (confirmText && !confirm(confirmText)) return;
+      try {
+        await Sama.api(path, { method: 'POST', body: body || {} });
+        await load();
+      } catch (e) { alert(e.message); }
+    }
+
+    document.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-act]');
+      if (!b) return;
+      const tok = b.dataset.token && encodeURIComponent(b.dataset.token);
+      const map = {
+        next: () => act(`/api/agent/services/${sid}/next`, { outcome: 'done' }),
+        absentNext: () => act(`/api/agent/services/${sid}/next`, { outcome: 'absent' }),
+        recall: () => act(`/api/agent/services/${sid}/recall`),
+        finish: () => act(`/api/agent/services/${sid}/finish`),
+        priority: () => act(`/api/agent/tickets/${tok}/priority`),
+        remove: () => act(`/api/agent/tickets/${tok}/remove`, null, `Retirer ce patient de la file ?`),
+        requeue: () => act(`/api/agent/tickets/${tok}/requeue`),
+      };
+      map[b.dataset.act] && map[b.dataset.act]();
+    });
+
+    $('#views').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-view]');
+      if (!b) return;
+      view = b.dataset.view;
+      document.querySelectorAll('#views .tab').forEach((t) => t.classList.toggle('on', t === b));
+      $('#queueView').classList.toggle('hidden', view !== 'queue');
+      $('#statsView').classList.toggle('hidden', view !== 'stats');
+      $('#catalogView').classList.toggle('hidden', view !== 'catalog');
+    });
+
+    function pickService(id) {
+      sid = id;
+      Sama.store.set('samatour-agent-service', sid);
+      render();
+    }
+    $('#serviceTabs').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-sid]');
+      if (b) pickService(b.dataset.sid);
+    });
+    $('#servicePick').addEventListener('change', (e) => pickService(e.target.value));
+    $('#dService').addEventListener('change', (e) => { e.target.dataset.touched = '1'; });
+
+    /** <option> regroupées par catégorie. */
+    function serviceOptions(list, selectedId, withCount) {
+      const cats = [...new Set(list.map((s) => s.category))];
+      return cats.map((c) => `<optgroup label="${Sama.esc(c)}">${list.filter((s) => s.category === c).map((s) =>
+        `<option value="${s.id}" ${s.id === selectedId ? 'selected' : ''}>${Sama.esc(s.name)}${withCount ? ` (${s.waiting} en attente)` : ''}${s.active === false ? ' — désactivé' : ''}</option>`).join('')}</optgroup>`).join('');
+    }
+
+    // ---- Catalogue de services ----
+    let editing = null;
+
+    function resetServiceForm() {
+      editing = null;
+      $('#serviceForm').reset();
+      $('#sfMinutes').value = 10;
+      $('#sfTitle').textContent = 'Ajouter un service';
+      $('#sfSubmit').textContent = 'Ajouter le service';
+      $('#sfCode').disabled = false;
+      $('#sfCancel').classList.add('hidden');
+      $('#sfError').classList.add('hidden');
+    }
+    $('#sfCancel').addEventListener('click', resetServiceForm);
+
+    $('#serviceForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const body = {
+        name: $('#sfName').value, category: $('#sfCategory').value, room: $('#sfRoom').value,
+        defaultMinutes: Number($('#sfMinutes').value), keywords: $('#sfKeywords').value,
+      };
+      try {
+        if (editing) await Sama.api(`/api/agent/catalog/${editing}/update`, { method: 'POST', body });
+        else await Sama.api('/api/agent/catalog', { method: 'POST', body: { ...body, id: $('#sfCode').value } });
+        resetServiceForm();
+        await load();
+      } catch (ex) { $('#sfError').textContent = ex.message; $('#sfError').classList.remove('hidden'); }
+    });
+
+    $('#catalog').addEventListener('change', (e) => {
+      const box = e.target.closest('[data-toggle]');
+      if (box) act(`/api/agent/catalog/${box.dataset.toggle}/update`, { active: box.checked });
+    });
+    $('#catalog').addEventListener('click', (e) => {
+      const ed = e.target.closest('[data-edit]');
+      const del = e.target.closest('[data-del]');
+      if (ed) {
+        const s = state.catalog.find((x) => x.id === ed.dataset.edit);
+        editing = s.id;
+        $('#sfName').value = s.name; $('#sfCategory').value = s.category; $('#sfRoom').value = s.room;
+        $('#sfMinutes').value = s.defaultMinutes; $('#sfKeywords').value = s.keywords || '';
+        $('#sfCode').value = s.id; $('#sfCode').disabled = true;
+        $('#sfTitle').textContent = `Modifier « ${s.name} »`;
+        $('#sfSubmit').textContent = 'Enregistrer';
+        $('#sfCancel').classList.remove('hidden');
+        $('#serviceForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      if (del) act(`/api/agent/catalog/${del.dataset.del}/delete`, null, 'Supprimer définitivement ce service ?');
+    });
+    $('#catalogSearch').addEventListener('input', renderCatalog);
+    $('#catalogShow').addEventListener('change', renderCatalog);
+
+    $('#applyProfile').addEventListener('click', () => {
+      const v = $('#profileLevel').value;
+      const label = $('#profileLevel').selectedOptions[0].textContent;
+      const body = v === 'all' ? { all: true } : v === 'none' ? { all: false } : { level: Number(v) };
+      act('/api/agent/catalog/profile', body, `Appliquer « ${label} » ? Les services cochés à la main seront remplacés.`);
+    });
+
+    $('#catalog').addEventListener('click', (e) => {
+      const b = e.target.closest('[data-cat-all]');
+      if (b) act('/api/agent/catalog/profile', { category: b.dataset.catAll, all: b.dataset.on === '1' });
+    });
+
+    const LEVEL_SHORT = { 1: 'Poste', 2: 'Centre', 3: 'Hôpital rég.', 4: 'CHU' };
+
+    function renderCatalog() {
+      const all = state.catalog;
+      const norm = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+      const q = norm($('#catalogSearch').value.trim());
+      const show = $('#catalogShow').value;
+      const list = all.filter((s) =>
+        (!q || norm([s.name, s.category, s.keywords, s.id, s.room].join(' ')).includes(q)) &&
+        (show === 'all' || (show === 'on' ? s.active : !s.active)));
+      const cats = [...new Set(all.map((s) => s.category))];
+      $('#catalogCount').textContent = `${all.filter((s) => s.active).length} actifs / ${all.length}`;
+      $('#categoryList').innerHTML = cats.map((c) => `<option value="${Sama.esc(c)}">`).join('');
+      if (!$('#profileLevel').options.length) {
+        $('#profileLevel').innerHTML = Object.entries(state.levels).map(([k, v]) => {
+          const n = all.filter((s) => s.level && s.level <= Number(k)).length;
+          return `<option value="${k}">${Sama.esc(v)} (${n} services)</option>`;
+        }).join('') + '<option value="all">Tout activer</option><option value="none">Tout désactiver</option>';
+      }
+      $('#catalog').innerHTML = [...new Set(list.map((s) => s.category))].map((c) => {
+        const inCat = all.filter((s) => s.category === c);
+        const on = inCat.filter((s) => s.active).length;
+        return `
+        <div class="group-title cat-head">
+          <span>${Sama.esc(c)} · ${on}/${inCat.length}</span>
+          <span>
+            <button class="btn link sm" data-cat-all="${Sama.esc(c)}" data-on="1">tout activer</button>
+            <button class="btn link sm" data-cat-all="${Sama.esc(c)}" data-on="0">tout désactiver</button>
+          </span>
+        </div>
+        ${list.filter((s) => s.category === c).map((s) => `
+          <div class="row ${s.active ? '' : 'off'}">
+            <label class="check" style="margin:0"><input type="checkbox" data-toggle="${s.id}" ${s.active ? 'checked' : ''} aria-label="Activer ${Sama.esc(s.name)}"></label>
+            <div class="who">
+              <div><b>${Sama.esc(s.name)}</b> <span class="pill grey">${s.id}</span>
+                ${s.level ? `<span class="pill" title="${Sama.esc(state.levels[s.level])}">dès ${LEVEL_SHORT[s.level]}</span>` : '<span class="pill green">ajouté</span>'}</div>
+              <div class="meta">${Sama.esc(s.room || 'Salle non précisée')} · ${s.defaultMinutes} min par patient${s.ticketsToday ? ` · ${s.ticketsToday} ticket(s) aujourd'hui` : ''}</div>
+            </div>
+            <div class="ops">
+              <button class="btn ghost sm" data-edit="${s.id}" title="Modifier">✎</button>
+              ${s.ticketsToday ? '' : `<button class="btn ghost sm" data-del="${s.id}" title="Supprimer">🗑</button>`}
+            </div>
+          </div>`).join('')}`;
+      }).join('') || '<p class="muted">Aucun service.</p>';
+      $('#screenLinks').innerHTML = `<a class="btn ghost sm" href="/ecran" target="_blank">Tous les services ↗</a> ` +
+        cats.map((c) => `<a class="btn ghost sm" style="margin:4px 4px 0 0" href="/ecran?categorie=${encodeURIComponent(c)}" target="_blank">${Sama.esc(c)} ↗</a>`).join('');
+    }
+
+    $('#deskForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = $('#deskError');
+      err.classList.add('hidden');
+      try {
+        const t = await Sama.api('/api/agent/tickets', {
+          method: 'POST',
+          body: { serviceId: $('#dService').value, name: $('#dName').value, phone: $('#dPhone').value, priority: $('#dPriority').checked },
+        });
+        $('#deskForm').reset();
+        showTicket(t);
+        await load();
+      } catch (ex) { err.textContent = ex.message; err.classList.remove('hidden'); }
+    });
+
+    function showTicket(t) {
+      $('#mFacility').textContent = state.facilityName;
+      $('#mNumber').textContent = t.number;
+      $('#mService').textContent = `${t.serviceName} · ${t.room}`;
+      $('#mTime').textContent = `Ticket pris à ${Sama.time(t.createdAt)}`;
+      Sama.qr($('#mQr'), t.url, 150);
+      $('#modal').classList.remove('hidden');
+    }
+    $('#mClose').addEventListener('click', () => $('#modal').classList.add('hidden'));
+
+    $('#export').addEventListener('click', async () => {
+      const res = await fetch('/api/agent/export.csv', { headers: { 'x-pin': Sama.getPin() } });
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `samatour-${new Date().toLocaleDateString('sv-SE')}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+    $('#seed').addEventListener('click', () => act('/api/agent/demo/seed', null, 'Remplacer la journée par des données de démonstration ?'));
+    $('#reset').addEventListener('click', () => act('/api/agent/reset', null, 'Vider toute la file du jour ?'));
+
+    // ---- Affichage ----
+    function render() {
+      if (!state) return;
+      $('#facility').textContent = state.facilityName;
+      renderCatalog();
+      renderStats();
+      const s = state.services.find((x) => x.id === sid);
+      if (!s) {
+        $('#currentCard').innerHTML = '<p>Aucun service actif. Activez des services dans l\'onglet <b>Services</b>.</p>';
+        $('#queue').innerHTML = '';
+        return;
+      }
+
+      // Sélecteur de poste (tous les services) + raccourcis vers les services qui ont des patients.
+      $('#servicePick').innerHTML = serviceOptions(state.services, sid, true);
+      const busy = state.services.filter((x) => x.id === sid || x.waiting || x.current);
+      $('#serviceTabs').innerHTML = busy.map((x) =>
+        `<button class="tab ${x.id === sid ? 'on' : ''}" data-sid="${x.id}">${Sama.esc(x.name)}<span class="count">${x.waiting}</span></button>`).join('');
+
+      const desk = $('#dService');
+      const deskValue = desk.dataset.touched ? desk.value : sid;
+      desk.innerHTML = serviceOptions(state.services.filter((x) => x.active !== false), deskValue, false);
+
+      const cur = s.currentTicket;
+      $('#currentCard').innerHTML = `
+        <div class="current">
+          <div>
+            <div class="small muted">${Sama.esc(s.name)} · ${Sama.esc(s.room)} · en consultation</div>
+            <div class="num">${cur ? Sama.esc(cur.number) : '—'}</div>
+            ${cur ? `<div>${Sama.esc(cur.name || 'Patient')} ${cur.priority ? '<span class="pill amber">Prioritaire</span>' : ''}
+              <span class="small muted">· appelé à ${Sama.time(cur.calledAt)} (${Sama.since(cur.calledAt)})</span></div>`
+              : '<div class="muted">Aucun patient appelé</div>'}
+          </div>
+          <div class="small muted" style="text-align:right">Durée moyenne<br><b style="font-size:1.2rem;color:var(--ink)">${s.avgMin} min</b></div>
+        </div>
+        <div class="actions">
+          ${cur ? `
+            <button class="btn green big wide" data-act="next" ${s.waiting ? '' : 'disabled'}>✓ Terminé · appeler le suivant</button>
+            <button class="btn ghost" data-act="recall">🔊 Rappeler</button>
+            <button class="btn ghost" data-act="absentNext">Absent · suivant</button>
+            <button class="btn link wide" data-act="finish">Terminer sans appeler personne</button>`
+            : `<button class="btn big wide" data-act="next" ${s.waiting ? '' : 'disabled'}>Appeler le premier patient</button>`}
+        </div>`;
+
+      $('#waitingCount').textContent = s.waiting;
+      $('#queue').innerHTML = s.queue.length ? s.queue.map((t, i) => `
+        <div class="row">
+          <div class="n">${Sama.esc(t.number)}</div>
+          <div class="who">
+            <div>${Sama.esc(t.name || 'Patient')} ${t.priority ? '<span class="pill amber">Prioritaire</span>' : ''}
+              ${t.onSite ? '' : `<span class="pill ${t.leaveNow ? 'green' : 'grey'}">${t.leaveNow ? 'en route' : 'à la maison'} · ${t.travelMin} min</span>`}</div>
+            <div class="meta">Arrivé à ${Sama.time(t.createdAt)} · attend depuis ${Sama.since(t.createdAt)}${t.phone ? ' · 📱 ' + Sama.esc(Sama.maskPhone(t.phone)) : ''} · ${i === 0 ? 'prochain' : Sama.duration(t.estimateMin)}</div>
+          </div>
+          <div class="ops">
+            <button class="btn ghost sm" title="${t.priority ? 'Retirer la priorité' : 'Rendre prioritaire'}" data-act="priority" data-token="${t.token}">${t.priority ? '★' : '☆'}</button>
+            <button class="btn ghost sm" title="Retirer de la file" data-act="remove" data-token="${t.token}">✕</button>
+          </div>
+        </div>`).join('') : '<p class="muted">Personne en attente.</p>';
+
+      $('#absent').innerHTML = s.absent.length ? s.absent.map((t) => `
+        <div class="row">
+          <div class="n">${Sama.esc(t.number)}</div>
+          <div class="who">${Sama.esc(t.name || 'Patient')}<div class="meta">Appelé à ${Sama.time(t.calledAt)}</div></div>
+          <button class="btn ghost sm" data-act="requeue" data-token="${t.token}">Remettre en file</button>
+        </div>`).join('') : '<p class="muted small">Aucun absent.</p>';
+
+    }
+
+    function renderStats() {
+      const T = state.stats.total;
+      const v = (x, unit = '') => (x == null ? '—' : x + unit);
+      $('#kpis').innerHTML = [
+        [v(T.done), 'patients vus'],
+        [v(T.waiting), 'en attente'],
+        [v(T.avgWaitMin, ' min'), 'attente moyenne avant appel'],
+        [v(T.avgConsultMin, ' min'), 'durée moyenne de consultation'],
+        [v(T.noShowRate, ' %'), "taux d'absence à l'appel"],
+        [v(T.remoteShare, ' %'), 'patients ayant attendu chez eux'],
+        [T.avgRating == null ? '—' : T.avgRating + ' / 5', `satisfaction (${T.ratings} avis)`],
+      ].map(([b, s]) => `<div class="kpi"><b>${b}</b><span>${s}</span></div>`).join('');
+
+      $('#statsTable').innerHTML = `
+        <tr><th>Service</th><th class="r">Tickets</th><th class="r">Vus</th><th class="r">En attente</th><th class="r">Absents</th>
+          <th class="r">Attente moy.</th><th class="r">Attente max</th><th class="r">Consult. moy.</th><th class="r">Satisfaction</th></tr>
+        ${state.stats.services.map((s) => `
+          <tr><td>${Sama.esc(s.name)}</td><td class="r">${s.total}</td><td class="r">${s.done}</td><td class="r">${s.waiting}</td>
+            <td class="r">${s.absent}</td><td class="r">${v(s.avgWaitMin, ' min')}</td><td class="r">${v(s.maxWaitMin, ' min')}</td>
+            <td class="r">${v(s.avgConsultMin, ' min')}</td><td class="r">${s.avgRating == null ? '—' : s.avgRating + '/5'}</td></tr>`).join('')}`;
+
+      $('#smsMode').textContent = state.smsMode === 'simulation' ? 'mode simulation' : 'Orange SMS';
+      $('#smsLog').innerHTML = state.sms.length ? state.sms.map((m) => `
+        <div class="sms"><b>${Sama.time(m.at)}</b> → ${Sama.esc(Sama.maskPhone(m.to))} <span class="pill grey">${Sama.esc(m.status)}</span>
+          <div class="muted">${Sama.esc(m.text)}</div></div>`).join('') : '<p class="muted small">Aucun SMS pour le moment.</p>';
+    }
+
+    setInterval(render, 30000); // met à jour les durées d'attente affichées
+
+    if (Sama.getPin()) start();
+  })();
+  </script>
+</body>
+</html>
