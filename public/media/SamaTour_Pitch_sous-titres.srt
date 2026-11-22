@@ -60,7 +60,7 @@ Elle paie 3 000 francs par Orange Money et reçoit la confirmation par SMS.
 
 16
 00:01:24,348 --> 00:01:30,330
-Le jour J, l'application lui dit quand partir, selon son trajet et l'attente réelle.
+Le jour J, la plateforme lui dit quand partir, selon son trajet et l'attente réelle.
 
 17
 00:01:30,530 --> 00:01:36,080
@@ -79,86 +79,90 @@ Son ordonnance arrive dans son dossier, sur son téléphone.
 Et Ali, sans smartphone, prend un ticket papier et reçoit ses alertes par SMS.
 
 21
-00:01:52,968 --> 00:01:57,270
-Tout cela n'est pas une maquette : l'application est déjà en ligne.
+00:01:52,968 --> 00:01:57,222
+Tout cela n'est pas une maquette : la plateforme est déjà en ligne.
 
 22
-00:01:57,470 --> 00:02:02,084
+00:01:57,422 --> 00:02:02,036
 Le jury peut la tester dès maintenant avec les comptes de démonstration.
 
 23
-00:02:03,234 --> 00:02:05,880
+00:02:03,186 --> 00:02:05,832
 Elle est pensée pour le Sénégal.
 
 24
-00:02:06,080 --> 00:02:11,126
+00:02:06,032 --> 00:02:11,078
 Paiement par Wave, Orange Money, Free Money, carte ou sur place.
 
 25
-00:02:11,326 --> 00:02:18,196
+00:02:11,278 --> 00:02:18,148
 Un dossier protégé : il ne s'ouvre qu'avec un rendez-vous, le code du patient, ou en urgence motivée.
 
 26
-00:02:18,396 --> 00:02:21,690
+00:02:18,348 --> 00:02:21,642
 Et le patient voit chaque accès à son dossier.
 
 27
-00:02:21,890 --> 00:02:29,864
+00:02:21,842 --> 00:02:29,816
 Notre assistant IA oriente sans jamais poser de diagnostic, et renvoie vers le SAMU au 1515 devant un signe de gravité.
 
 28
-00:02:30,064 --> 00:02:37,462
-Accessible à tous : SMS, ticket papier, annonce vocale en salle, aucune application à installer.
+00:02:30,016 --> 00:02:37,006
+Accessible à tous : SMS, ticket papier, annonce vocale en salle, et rien à installer.
 
 29
-00:02:37,662 --> 00:02:42,828
+00:02:37,206 --> 00:02:42,372
 Du poste de santé au CHU, 89 services s'activent en un clic.
 
 30
-00:02:43,978 --> 00:02:51,424
-Quel impact ? Nous avons simulé 1 000 matinées de consultation, avec les algorithmes de l'application.
+00:02:43,522 --> 00:02:51,016
+Quel impact ? Nous avons simulé 1 000 matinées de consultation, avec les algorithmes de la plateforme.
 
 31
-00:02:51,624 --> 00:02:55,782
+00:02:51,216 --> 00:02:55,374
 Résultat : le temps passé sur place est divisé par deux.
 
 32
-00:02:55,982 --> 00:03:01,532
+00:02:55,574 --> 00:03:01,124
 Ceux qui attendent chez eux ne passent plus que 18 minutes sur place, au lieu de 3 heures.
 
 33
-00:03:01,732 --> 00:03:05,146
+00:03:01,324 --> 00:03:04,738
 La salle d'attente est près de deux fois moins pleine.
 
 34
-00:03:05,346 --> 00:03:09,552
+00:03:04,938 --> 00:03:09,144
 Le pilote servira à confirmer ces chiffres sur le terrain.
 
 35
-00:03:10,702 --> 00:03:16,252
+00:03:10,294 --> 00:03:15,844
 Notre modèle économique : le patient reste gratuit, les structures financent.
 
 36
-00:03:16,452 --> 00:03:20,922
-Un abonnement mensuel, une petite commission sur les paiements en ligne,
+00:03:16,044 --> 00:03:20,466
+Chaque établissement paie un abonnement de 100 000 francs CFA par mois.
 
 37
-00:03:21,122 --> 00:03:26,240
-des forfaits pour les assureurs et mutuelles, et une option premium pour les familles.
+00:03:20,666 --> 00:03:28,136
+Avec un investissement de départ de 5 millions de francs CFA, le point mort est atteint avec 5 établissements, en 10 mois.
 
 38
-00:03:27,390 --> 00:03:34,188
-L'application est prête. Dans les trois prochains mois : un pilote dans une ou deux structures.
+00:03:28,336 --> 00:03:34,942
+S'y ajoutent une commission sur les paiements en ligne, des forfaits pour les assureurs et une option premium pour les familles.
 
 39
-00:03:34,388 --> 00:03:39,218
-Notre équipe réunit la médecine, la santé numérique et la finance.
+00:03:36,092 --> 00:03:42,770
+La plateforme est prête. Dans les trois prochains mois : un pilote dans une ou deux structures.
 
 40
-00:03:40,368 --> 00:03:45,918
-Nous cherchons un établissement pilote, un mentorat, et un financement de départ.
+00:03:42,970 --> 00:03:47,800
+Notre équipe réunit la médecine, la santé numérique et la finance.
 
 41
-00:03:46,118 --> 00:03:51,428
+00:03:48,950 --> 00:03:54,500
+Nous cherchons un établissement pilote, un mentorat, et un financement de départ.
+
+42
+00:03:54,700 --> 00:04:00,010
 Sama Tour : moins d'attente, plus de soins. Merci.
 
