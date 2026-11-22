@@ -1,164 +1,164 @@
 1
-00:00:00,500 --> 00:00:05,354
+00:00:00,600 --> 00:00:05,190
 Sama Tour : le parcours patient, simplement réinventé.
 
 2
-00:00:05,504 --> 00:00:10,742
+00:00:05,390 --> 00:00:10,004
 Un projet de l'équipe XEL SANTE pour le PAS Challenge 2026.
 
 3
-00:00:11,792 --> 00:00:17,569
+00:00:11,154 --> 00:00:15,792
 Au Sénégal, se soigner coûte du temps avant de coûter de l'argent.
 
 4
-00:00:17,719 --> 00:00:23,342
+00:00:15,992 --> 00:00:20,054
 Dès l'aube, les patients font la queue pour « prendre un rang ».
 
 5
-00:00:23,492 --> 00:00:29,346
+00:00:20,254 --> 00:00:24,652
 Puis ils attendent des heures, sans savoir quand viendra leur tour.
 
 6
-00:00:29,496 --> 00:00:35,504
+00:00:24,852 --> 00:00:29,370
 Les structures sont saturées et n'ont aucune donnée pour s'organiser.
 
 7
-00:00:35,654 --> 00:00:44,354
+00:00:29,570 --> 00:00:36,296
 Les plus fragiles en souffrent le plus : malades chroniques, personnes âgées, femmes enceintes, enfants.
 
 8
-00:00:45,404 --> 00:00:52,104
+00:00:37,446 --> 00:00:42,660
 Sama Tour réunit tout le parcours dans une seule plateforme, en trois espaces.
 
 9
-00:00:52,254 --> 00:00:59,108
+00:00:42,860 --> 00:00:48,026
 Le patient suit son tour à distance, prend rendez-vous et paie par mobile money.
 
 10
-00:00:59,258 --> 00:01:04,573
+00:00:48,226 --> 00:00:52,648
 Il garde sa carte de santé et son dossier sur son téléphone.
 
 11
-00:01:04,723 --> 00:01:14,038
+00:00:52,848 --> 00:00:59,766
 Et un assistant IA l'oriente : il décrit ce qu'il ressent avec ses mots, l'assistant lui indique le bon service.
 
 12
-00:01:14,188 --> 00:01:20,581
+00:00:59,966 --> 00:01:04,700
 Les soignants ont leur agenda, la file d'attente et le dossier du patient.
 
 13
-00:01:20,731 --> 00:01:28,892
+00:01:04,900 --> 00:01:11,434
 L'administration gère le personnel, les tarifs et les recettes, sans accès aux données médicales.
 
 14
-00:01:29,942 --> 00:01:36,104
+00:01:12,584 --> 00:01:18,854
 Prenons Aminah, à Pikine. Elle réserve une consultation de cardiologie.
 
 15
-00:01:36,254 --> 00:01:42,646
+00:01:19,054 --> 00:01:24,148
 Elle paie 3 000 francs par Orange Money et reçoit la confirmation par SMS.
 
 16
-00:01:42,796 --> 00:01:49,958
+00:01:24,348 --> 00:01:30,330
 Le jour J, l'application lui dit quand partir, selon son trajet et l'attente réelle.
 
 17
-00:01:50,108 --> 00:01:57,346
+00:01:30,530 --> 00:01:36,080
 À son arrivée, elle touche « Je suis arrivée » et passe à l'heure de son rendez-vous.
 
 18
-00:01:57,496 --> 00:02:03,350
+00:01:36,280 --> 00:01:41,110
 Le médecin scanne sa carte : il voit son allergie à la pénicilline.
 
 19
-00:02:03,500 --> 00:02:08,662
+00:01:41,310 --> 00:01:45,588
 Son ordonnance arrive dans son dossier, sur son téléphone.
 
 20
-00:02:08,812 --> 00:02:15,512
+00:01:45,788 --> 00:01:51,818
 Et Ali, sans smartphone, prend un ticket papier et reçoit ses alertes par SMS.
 
 21
-00:02:16,562 --> 00:02:22,415
+00:01:52,968 --> 00:01:57,270
 Tout cela n'est pas une maquette : l'application est déjà en ligne.
 
 22
-00:02:22,565 --> 00:02:28,804
+00:01:57,470 --> 00:02:02,084
 Le jury peut la tester dès maintenant avec les comptes de démonstration.
 
 23
-00:02:29,854 --> 00:02:33,015
+00:02:03,234 --> 00:02:05,880
 Elle est pensée pour le Sénégal.
 
 24
-00:02:33,165 --> 00:02:38,788
+00:02:06,080 --> 00:02:11,126
 Paiement par Wave, Orange Money, Free Money, carte ou sur place.
 
 25
-00:02:38,938 --> 00:02:47,408
+00:02:11,326 --> 00:02:18,196
 Un dossier protégé : il ne s'ouvre qu'avec un rendez-vous, le code du patient, ou en urgence motivée.
 
 26
-00:02:47,558 --> 00:02:51,796
+00:02:18,396 --> 00:02:21,690
 Et le patient voit chaque accès à son dossier.
 
 27
-00:02:51,946 --> 00:03:01,800
+00:02:21,890 --> 00:02:29,864
 Notre assistant IA oriente sans jamais poser de diagnostic, et renvoie vers le SAMU au 1515 devant un signe de gravité.
 
 28
-00:03:01,950 --> 00:03:10,035
+00:02:30,064 --> 00:02:37,462
 Accessible à tous : SMS, ticket papier, annonce vocale en salle, aucune application à installer.
 
 29
-00:03:10,185 --> 00:03:15,500
+00:02:37,662 --> 00:02:42,828
 Du poste de santé au CHU, 89 services s'activent en un clic.
 
 30
-00:03:16,550 --> 00:03:25,096
+00:02:43,978 --> 00:02:51,424
 Quel impact ? Nous avons simulé 1 000 matinées de consultation, avec les algorithmes de l'application.
 
 31
-00:03:25,246 --> 00:03:30,254
+00:02:51,624 --> 00:02:55,782
 Résultat : le temps passé sur place est divisé par deux.
 
 32
-00:03:30,404 --> 00:03:38,027
+00:02:55,982 --> 00:03:01,532
 Ceux qui attendent chez eux ne passent plus que 18 minutes sur place, au lieu de 3 heures.
 
 33
-00:03:38,177 --> 00:03:43,031
+00:03:01,732 --> 00:03:05,146
 La salle d'attente est près de deux fois moins pleine.
 
 34
-00:03:43,181 --> 00:03:48,342
+00:03:05,346 --> 00:03:09,552
 Le pilote servira à confirmer ces chiffres sur le terrain.
 
 35
-00:03:49,392 --> 00:03:56,015
+00:03:10,702 --> 00:03:16,252
 Notre modèle économique : le patient reste gratuit, les structures financent.
 
 36
-00:03:56,165 --> 00:04:02,404
+00:03:16,452 --> 00:03:20,922
 Un abonnement mensuel, une petite commission sur les paiements en ligne,
 
 37
-00:04:02,554 --> 00:04:09,869
+00:03:21,122 --> 00:03:26,240
 des forfaits pour les assureurs et mutuelles, et une option premium pour les familles.
 
 38
-00:04:10,919 --> 00:04:18,927
+00:03:27,390 --> 00:03:34,188
 L'application est prête. Dans les trois prochains mois : un pilote dans une ou deux structures.
 
 39
-00:04:19,077 --> 00:04:24,854
+00:03:34,388 --> 00:03:39,218
 Notre équipe réunit la médecine, la santé numérique et la finance.
 
 40
-00:04:25,904 --> 00:04:32,835
+00:03:40,368 --> 00:03:45,918
 Nous cherchons un établissement pilote, un mentorat, et un financement de départ.
 
 41
-00:04:32,985 --> 00:04:37,531
+00:03:46,118 --> 00:03:51,428
 Sama Tour : moins d'attente, plus de soins. Merci.
 
