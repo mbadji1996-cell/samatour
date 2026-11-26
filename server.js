@@ -858,6 +858,7 @@ const MIME = {
   '.mp4': 'video/mp4',
   '.srt': 'text/plain; charset=utf-8',
   '.pdf': 'application/pdf',
+  '.pptx': 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
   '.ico': 'image/x-icon',
 };
 
